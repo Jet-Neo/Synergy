@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36414.22 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Synergy", "Synergy\Synergy.csproj", "{EA144399-7363-4B66-9F2D-4D3240ECF4BD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EA144399-7363-4B66-9F2D-4D3240ECF4BD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EA144399-7363-4B66-9F2D-4D3240ECF4BD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EA144399-7363-4B66-9F2D-4D3240ECF4BD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EA144399-7363-4B66-9F2D-4D3240ECF4BD}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {19DF28FE-F376-48D0-B684-C76C720A1A90}
+	EndGlobalSection
+EndGlobal
