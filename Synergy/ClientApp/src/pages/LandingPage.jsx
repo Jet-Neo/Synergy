@@ -41,7 +41,7 @@ export default function LandingPage() {
                         </Button>
                     </Link>
                     <Link to="/signup">
-                        <Button variant="primary" className="shadow-[0_0_20px_rgba(34,197,94,0.3)] hover:shadow-[0_0_30px_rgba(34,197,94,0.4)]">
+                        <Button variant="primary" className="shadow-[0_0_20px_rgba(34,197,94,0.3)] hover:shadow-[0_0_30px_rgba(34,197,94,0.4)] text-white">
                             Get Started <ArrowRight className="ml-2 w-4 h-4" />
                         </Button>
                     </Link>
@@ -62,17 +62,17 @@ export default function LandingPage() {
                         <span className="text-green-500">Healthier Workflows.</span>
                     </h1>
                     <p className="text-xl text-gray-400 mb-10 max-w-2xl mx-auto leading-relaxed">
-                        Stop burnout before it starts. Synergy helps student teams track workload, manage tasks, and maintain balance with AI-driven analytics.
+                        Stop burnout before it starts. Synergy helps student teams track workload, manage tasks, and maintain balance with Heuristic-driven analytics.
                     </p>
                     <div className="flex items-center justify-center gap-4">
                         <Link to="/signup">
-                            <Button size="lg" className="h-12 px-8 text-lg shadow-[0_0_25px_rgba(34,197,94,0.3)] hover:shadow-[0_0_40px_rgba(34,197,94,0.5)] transition-all">
-                                Start for Free
+                            <Button size="lg" className="h-12 px-8 text-lg shadow-[0_0_25px_rgba(34,197,94,0.3)] hover:shadow-[0_0_40px_rgba(34,197,94,0.5)] transition-all text-white">
+                                Start Now!
                             </Button>
                         </Link>
                         <Link to="/login">
-                            <Button variant="outline" size="lg" className="h-12 px-8 text-lg border-gray-700 hover:border-gray-500">
-                                View Demo
+                            <Button variant="outline" size="lg" className="h-12 px-8 text-lg border-gray-700 hover:border-gray-500 text-white">
+                                Log In
                             </Button>
                         </Link>
                     </div>
