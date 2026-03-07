@@ -1,0 +1,10 @@
+{
+  "name": "synergy-root",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"dotnet run\" \"cd ClientApp && npm run dev\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
