@@ -1,39 +1,142 @@
-﻿export function LoginPage({ onBack }) {
+﻿import { useState } from "react";
+import { Logo } from "../components/ui/Logo";
+import { Mail, Lock, User } from "lucide-react";
+
+export function AuthPage({ mode, onSubmit, onToggleMode, onBack, error }) {
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [name, setName] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+
+        try {
+            await onSubmit(email, password, name);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     return (
-        <div className="min-h-screen flex items-center justify-center bg-black text-white">
-            <div className="bg-zinc-900 p-8 rounded-xl w-96">
+        <div className="min-h-screen bg-gradient-to-br from-synergy-bg-dark via-synergy-black to-synergy-charcoal flex items-center justify-center p-6">
+            <div className="w-full max-w-md">
+                {/* Logo */}
+                <div className="text-center mb-12">
+                    <div className="flex justify-center mb-6">
+                        <Logo size="lg" />
+                    </div>
 
-                <h1 className="text-3xl font-bold text-center mb-4">
-                    Synergy
-                </h1>
+                    <h2 className="text-3xl text-white mb-2 font-bold">
+                        {mode === "login" ? "Welcome Back" : "Get Started"}
+                    </h2>
 
-                <p className="text-gray-400 text-center mb-6">
-                    Log in to access your team dashboard
-                </p>
+                    <p className="text-synergy-light-gray">
+                        {mode === "login"
+                            ? "Log in to access your team dashboard"
+                            : "Create an account to start collaborating"}
+                    </p>
+                </div>
 
-                <input
-                    type="email"
-                    placeholder="you@university.edu"
-                    className="w-full mb-3 p-3 rounded bg-zinc-800"
-                />
+                {/* Form Card */}
+                <div className="bg-synergy-charcoal border border-synergy-dark-gray rounded-2xl p-8 shadow-2xl">
+                    {error && (
+                        <div className="mb-6 p-4 rounded-lg text-sm text-synergy-red bg-synergy-red/10 border border-synergy-red/30">
+                            {error}
+                        </div>
+                    )}
 
-                <input
-                    type="password"
-                    placeholder="Password"
-                    className="w-full mb-4 p-3 rounded bg-zinc-800"
-                />
+                    <form onSubmit={handleSubmit} className="space-y-5">
+                        {mode === "signup" && (
+                            <div>
+                                <label className="block text-white mb-2 text-sm">Full Name</label>
+                                <div className="relative">
+                                    <User
+                                        className="absolute left-4 top-1/2 -translate-y-1/2 text-synergy-light-gray"
+                                        size={18}
+                                    />
+                                    <input
+                                        type="text"
+                                        value={name}
+                                        onChange={(e) => setName(e.target.value)}
+                                        placeholder="Enter your name"
+                                        required
+                                        className="w-full bg-synergy-dark-gray border border-synergy-gray rounded-lg pl-12 pr-4 py-3 text-white placeholder:text-synergy-light-gray focus:outline-none focus:border-primary transition-all"
+                                    />
+                                </div>
+                            </div>
+                        )}
 
-                <button className="w-full bg-green-500 p-3 rounded font-bold">
-                    Log In
-                </button>
+                        <div>
+                            <label className="block text-white mb-2 text-sm">Email</label>
+                            <div className="relative">
+                                <Mail
+                                    className="absolute left-4 top-1/2 -translate-y-1/2 text-synergy-light-gray"
+                                    size={18}
+                                />
+                                <input
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="you@university.edu"
+                                    required
+                                    className="w-full bg-synergy-dark-gray border border-synergy-gray rounded-lg pl-12 pr-4 py-3 text-white placeholder:text-synergy-light-gray focus:outline-none focus:border-primary transition-all"
+                                />
+                            </div>
+                        </div>
 
-                <button
-                    className="mt-4 text-sm text-gray-400 underline"
-                    onClick={onBack}
-                >
-                    Back
-                </button>
+                        <div>
+                            <label className="block text-white mb-2 text-sm">Password</label>
+                            <div className="relative">
+                                <Lock
+                                    className="absolute left-4 top-1/2 -translate-y-1/2 text-synergy-light-gray"
+                                    size={18}
+                                />
+                                <input
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder="••••••••"
+                                    required
+                                    className="w-full bg-synergy-dark-gray border border-synergy-gray rounded-lg pl-12 pr-4 py-3 text-white placeholder:text-synergy-light-gray focus:outline-none focus:border-primary transition-all"
+                                />
+                            </div>
+                        </div>
 
+                        <button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="w-full bg-primary hover:bg-primary/90 text-white py-3.5 rounded-lg shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
+                        >
+                            {isSubmitting
+                                ? "Please wait..."
+                                : mode === "login"
+                                    ? "Log In"
+                                    : "Create Account"}
+                        </button>
+                    </form>
+
+                    <div className="mt-6 text-center">
+                        <button
+                            onClick={onToggleMode}
+                            className="text-synergy-light-gray hover:text-primary transition-all text-sm"
+                        >
+                            {mode === "login"
+                                ? "Don't have an account? Sign up"
+                                : "Already have an account? Log in"}
+                        </button>
+                    </div>
+
+                    <div className="mt-4 text-center">
+                        <button
+                            onClick={onBack}
+                            className="text-synergy-light-gray hover:text-white transition-all text-sm"
+                        >
+                            ← Back to home
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     );
