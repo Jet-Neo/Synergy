@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { LandingPage } from "./pages/LandingPage";
 import { AuthPage } from "./pages/LoginPage";
+import DashboardPage from "./pages/DashboardPage";
 
 function App() {
     const [currentPage, setCurrentPage] = useState("landing");
@@ -21,7 +22,9 @@ function App() {
 
     const handleToggleMode = () => {
         setError(null);
-        setAuthMode((prevMode) => (prevMode === "login" ? "signup" : "login"));
+        setAuthMode((prevMode) =>
+            prevMode === "login" ? "signup" : "login"
+        );
     };
 
     const handleBackToHome = () => {
@@ -38,16 +41,22 @@ function App() {
                 name,
             });
 
-            // later you can replace this with real backend auth
             setError(null);
 
-            // temporary success behavior
-            alert(`${authMode === "login" ? "Logged in" : "Account created"} successfully!`);
+            // simulate successful login
+            alert(
+                `${authMode === "login" ? "Logged in" : "Account created"} successfully!`
+            );
+
+            // go to dashboard after login/signup
+            setCurrentPage("dashboard");
+
         } catch (err) {
             setError("Something went wrong. Please try again.");
         }
     };
 
+    // AUTH PAGE
     if (currentPage === "auth") {
         return (
             <AuthPage
@@ -60,6 +69,12 @@ function App() {
         );
     }
 
+    // DASHBOARD PAGE
+    if (currentPage === "dashboard") {
+        return <DashboardPage />;
+    }
+
+    // LANDING PAGE (default)
     return (
         <LandingPage
             onGetStarted={handleOpenSignup}
