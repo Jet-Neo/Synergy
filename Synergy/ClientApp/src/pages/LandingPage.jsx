@@ -75,11 +75,11 @@ export function LandingPage({ onGetStarted, onLogin }) {
                         </button>
 
                         <button
-                            onClick={onLogin}
+                            onClick={onLogin} 
                             className="px-8 py-4 bg-synergy-charcoal hover:bg-synergy-dark-gray text-white rounded-lg
                          transition-all duration-300 font-semibold"
                         >
-                            View Demo
+                            Log In
                         </button>
                     </div>
                 </div>
