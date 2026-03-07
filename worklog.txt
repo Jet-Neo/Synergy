@@ -1,0 +1,45 @@
+3.7.26
+- Controller
+-->created AccountController.cs
+
+-Clientapp/src/pages
+--> created LoginPage.jsx
+--> modified App.jsx
+--> created DemoPage.jsx
+--> modified LandingPage.jsx
+	- code change--> export function LandingPage({ onGetStarted, onLogin, onViewDemo }) {
+	- code change--> <button
+    				onClick={onViewDemo} //change from OnLogin to OnViewDemo
+   				className="px-8 py-4 bg-synergy-charcoal hover:bg-synergy-dark-gray text-white rounded-lg
+               				transition-all duration-300 font-semibold"
+			 >
+    			 	View Demo
+			 </button>
+--> Modified ClietApp/src/App.jsx 
+	- code deleted --> import { useState } from "react";
+		           import { LandingPage } from "./pages/LandingPage";
+		           import { LoginPage } from "./pages/LoginPage";
+
+                           function App() {
+    				const [page, setPage] = useState("landing");
+
+    				if (page === "login") {
+      				    return <LoginPage onBack={() => setPage("landing")} />;
+  			 	}
+
+   			  	return (
+      				    <LandingPage
+           				 onGetStarted={() => setPage("login")}
+            				 onLogin={() => setPage("login")}
+      				    />
+  			  	);
+			   }
+
+			   export default App;
+--> modified LandingPage.jsx
+--> Deleted DemoPage.jsx
+
+
+
+
+
