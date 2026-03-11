@@ -3,14 +3,48 @@ import { Logo } from "../components/ui/Logo";
 import { Mail, Lock, User } from "lucide-react";
 
 export function AuthPage({ mode, onSubmit, onToggleMode, onBack, error }) {
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [name, setName] = useState("");
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [name, setName] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [nameValid, setNameValid] = useState(true);
+    const [emailValid, setEmailValid] = useState(true);
+    const [passwordCriteria, setPasswordCriteria] = useState({
+        length: false, special: false, number: false, capital: false
+    });
+
+
+    const validateName = (name) => name && name.trim().length >= 4;
+    const validateEmail = (email) => email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    const validatePassword = (pwd) => {
+        if (!pwd) return false;
+        const length = pwd.length >= 8;
+        const special = (pwd.match(/[!@#$%^&*(),.?":{}|<>]/g) || []).length >= 1;
+        const number = /\d/.test(pwd);
+        const capital = /[A-Z]/.test(pwd);
+        setPasswordCriteria({ length, special, number, capital });
+        return length && special && number && capital;
+    };
+
+
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsSubmitting(true);
+        setNameValid(true);
+        setEmailValid(true);
+
+        const nameOk = validateName(name);
+        const emailOk = validateEmail(email);
+        const passOk = validatePassword(password);
+
+        if (!nameOk) setNameValid(false);
+        if (!emailOk) setEmailValid(false);
+
+        if (!nameOk || !emailOk || !passOk) {
+            setIsSubmitting(false);
+            return;
+        }
 
         try {
             await onSubmit(email, password, name);
@@ -18,6 +52,12 @@ export function AuthPage({ mode, onSubmit, onToggleMode, onBack, error }) {
             setIsSubmitting(false);
         }
     };
+
+
+
+    
+
+
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-synergy-bg-dark via-synergy-black to-synergy-charcoal flex items-center justify-center p-6">
@@ -59,12 +99,30 @@ export function AuthPage({ mode, onSubmit, onToggleMode, onBack, error }) {
                                     <input
                                         type="text"
                                         value={name}
-                                        onChange={(e) => setName(e.target.value)}
-                                        placeholder="Enter your name"
-                                        required
+                                        onChange={(e) => {
+                                            setName(e.target.value);
+                                            setNameValid(validateName(e.target.value));
+                                        }}
+                                        placeholder="Enter your full name"
                                         className="w-full bg-synergy-dark-gray border border-synergy-gray rounded-lg pl-12 pr-4 py-3 text-white placeholder:text-synergy-light-gray focus:outline-none focus:border-primary transition-all"
+                                        aria-invalid={!nameValid}
+                                        title={
+                                            !nameValid
+                                                ? "Full name must be at least 2 characters."
+                                                : ""
+                                        }
                                     />
+
                                 </div>
+
+                                {!nameValid && (
+                                    <p className="text-xs text-synergy-red mt-1">
+                                        Full name must be at least 2 characters.
+                                    </p>
+                                )}
+
+
+
                             </div>
                         )}
 
@@ -76,14 +134,31 @@ export function AuthPage({ mode, onSubmit, onToggleMode, onBack, error }) {
                                     size={18}
                                 />
                                 <input
-                                    type="email"
+                                    type="text"
                                     value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
+                                    onChange={(e) => {
+                                        setEmail(e.target.value);
+                                        setEmailValid(validateEmail(e.target.value));
+                                    }}
                                     placeholder="you@university.edu"
-                                    required
                                     className="w-full bg-synergy-dark-gray border border-synergy-gray rounded-lg pl-12 pr-4 py-3 text-white placeholder:text-synergy-light-gray focus:outline-none focus:border-primary transition-all"
+                                    aria-invalid={!emailValid}
+                                    title={
+                                        !emailValid
+                                            ? "Enter a valid email address with '@' and a domain."
+                                            : ""
+                                    }
                                 />
+
                             </div>
+
+                            {!emailValid && (
+                                <p className="text-xs text-synergy-red mt-1">
+                                    Please enter a valid email address.
+                                </p>
+                            )}
+
+
                         </div>
 
                         <div>
@@ -96,13 +171,59 @@ export function AuthPage({ mode, onSubmit, onToggleMode, onBack, error }) {
                                 <input
                                     type="password"
                                     value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
+                                    onChange={(e) => {
+                                        setPassword(e.target.value);
+                                        validatePassword(e.target.value);
+                                    }}
                                     placeholder="••••••••"
                                     required
                                     className="w-full bg-synergy-dark-gray border border-synergy-gray rounded-lg pl-12 pr-4 py-3 text-white placeholder:text-synergy-light-gray focus:outline-none focus:border-primary transition-all"
                                 />
                             </div>
+
+                            <div className="mt-3 space-y-1">
+                                <label className="flex items-center">
+                                    <input
+                                        type="checkbox"
+                                        checked={passwordCriteria.length}
+                                        className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2 mr-2"
+                                        readOnly
+                                    />
+                                    <span className="text-xs text-synergy-light-gray">8+ characters</span>
+                                </label>
+                                <label className="flex items-center">
+                                    <input
+                                        type="checkbox"
+                                        checked={passwordCriteria.special}
+                                        className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2 mr-2"
+                                        readOnly
+                                    />
+                                    <span className="text-xs text-synergy-light-gray">1+ special char</span>
+                                </label>
+                                <label className="flex items-center">
+                                    <input
+                                        type="checkbox"
+                                        checked={passwordCriteria.number}
+                                        className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2 mr-2"
+                                        readOnly
+                                    />
+                                    <span className="text-xs text-synergy-light-gray">1+ number</span>
+                                </label>
+                                <label className="flex items-center">
+                                    <input
+                                        type="checkbox"
+                                        checked={passwordCriteria.capital}
+                                        className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2 mr-2"
+                                        readOnly
+                                    />
+                                    <span className="text-xs text-synergy-light-gray">1+ capital letter</span>
+                                </label>
+                            </div>
+
+
                         </div>
+
+
 
                         <button
                             type="submit"
