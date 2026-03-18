@@ -40,3 +40,8 @@
 .read-the-docs {
   color: #888;
 }
+
+input[type="checkbox"]:checked {
+    background-color: #10b981;
+    border-color: #10b981;
+}
