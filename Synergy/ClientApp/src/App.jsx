@@ -1,86 +1,151 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { LandingPage } from "./pages/LandingPage";
 import { AuthPage } from "./pages/LoginPage";
+import { Sidebar } from "./pages/Sidebar";
 import DashboardPage from "./pages/DashboardPage";
+import TasksPage from "./pages/TasksPage";
+import { auth } from "./services/api";
 
-function App() {
-    const [currentPage, setCurrentPage] = useState("landing");
-    const [authMode, setAuthMode] = useState("login");
+export default function App() {
+    const [view, setView] = useState("loading");
+    const [activeTab, setActiveTab] = useState("dashboard");
     const [error, setError] = useState(null);
 
-    const handleOpenLogin = () => {
-        setAuthMode("login");
+    useEffect(() => {
+        let isMounted = true;
+
+        const runSessionCheck = async () => {
+            try {
+                const session = await auth.getSession();
+
+                if (!isMounted) return;
+
+                if (session) {
+                    setView("dashboard");
+                } else {
+                    setView("landing");
+                }
+            } catch (err) {
+                console.error("Session check error:", err);
+
+                if (isMounted) {
+                    setView("landing");
+                }
+            }
+        };
+
+        runSessionCheck();
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
+    const handleGetStarted = () => {
+        setView("signup");
         setError(null);
-        setCurrentPage("auth");
     };
 
-    const handleOpenSignup = () => {
-        setAuthMode("signup");
+    const handleLogin = () => {
+        setView("login");
         setError(null);
-        setCurrentPage("auth");
     };
 
-    const handleToggleMode = () => {
-        setError(null);
-        setAuthMode((prevMode) =>
-            prevMode === "login" ? "signup" : "login"
-        );
-    };
-
-    const handleBackToHome = () => {
-        setError(null);
-        setCurrentPage("landing");
-    };
-
-    const handleAuthSubmit = async (email, password, name) => {
+    const handleAuth = async (email, password, name) => {
         try {
-            console.log("Auth submitted:", {
-                mode: authMode,
-                email,
-                password,
-                name,
-            });
-
             setError(null);
 
-            // simulate successful login
-            alert(
-                `${authMode === "login" ? "Logged in" : "Account created"} successfully!`
-            );
+            if (view === "signup") {
+                await auth.signup(email, password, name);
+            } else {
+                await auth.login(email, password);
+            }
 
-            // go to dashboard after login/signup
-            setCurrentPage("dashboard");
-
+            setView("dashboard");
+            setActiveTab("dashboard");
         } catch (err) {
-            setError("Something went wrong. Please try again.");
+            console.error("Auth error:", err);
+            setError("Authentication failed. Try again.");
         }
     };
 
-    // AUTH PAGE
-    if (currentPage === "auth") {
+    const handleToggleAuthMode = () => {
+        setView(view === "login" ? "signup" : "login");
+    };
+
+    const handleBackToLanding = () => {
+        setView("landing");
+    };
+
+    const handleLogout = async () => {
+        try {
+            await auth.logout();
+        } catch (err) {
+            console.error("Logout error:", err);
+        }
+
+        setView("landing");
+        setActiveTab("dashboard");
+    };
+
+    const renderContent = () => {
+        switch (activeTab) {
+            case "dashboard":
+                return <DashboardPage />;
+            case "tasks":
+                return <TasksPage />;
+            case "worklogs":
+                return <div className="p-8 text-white">Work Logs page coming soon...</div>;
+            case "analytics":
+                return <div className="p-8 text-white">Analytics page coming soon...</div>;
+            case "teams":
+                return <div className="p-8 text-white">Teams page coming soon...</div>;
+            case "settings":
+                return <div className="p-8 text-white">Settings page coming soon...</div>;
+            default:
+                return <DashboardPage />;
+        }
+    };
+
+    if (view === "loading") {
+        return (
+            <div className="h-screen bg-background flex items-center justify-center">
+                <div className="text-synergy-light-gray">Loading...</div>
+            </div>
+        );
+    }
+
+    if (view === "landing") {
+        return (
+            <LandingPage
+                onGetStarted={handleGetStarted}
+                onLogin={handleLogin}
+            />
+        );
+    }
+
+    if (view === "login" || view === "signup") {
         return (
             <AuthPage
-                mode={authMode}
-                onSubmit={handleAuthSubmit}
-                onToggleMode={handleToggleMode}
-                onBack={handleBackToHome}
+                mode={view}
+                onSubmit={handleAuth}
+                onToggleMode={handleToggleAuthMode}
+                onBack={handleBackToLanding}
                 error={error}
             />
         );
     }
 
-    // DASHBOARD PAGE
-    if (currentPage === "dashboard") {
-        return <DashboardPage />;
-    }
-
-    // LANDING PAGE (default)
     return (
-        <LandingPage
-            onGetStarted={handleOpenSignup}
-            onLogin={handleOpenLogin}
-        />
+        <div className="h-screen flex bg-background overflow-hidden">
+            <Sidebar
+                activeTab={activeTab}
+                onTabChange={setActiveTab}
+                onLogout={handleLogout}
+            />
+            <div className="flex-1 overflow-y-auto">
+                {renderContent()}
+            </div>
+        </div>
     );
 }
-
-export default App;
