@@ -3,6 +3,7 @@ import { LandingPage } from "./pages/LandingPage";
 import { AuthPage } from "./pages/LoginPage";
 import { Sidebar } from "./pages/Sidebar";
 import DashboardPage from "./pages/DashboardPage";
+import TasksPage from "./pages/TasksPage";
 import { auth } from "./services/api";
 
 export default function App() {
@@ -88,13 +89,22 @@ export default function App() {
     };
 
     const renderContent = () => {
-        if (activeTab === "dashboard") return <DashboardPage />;
-
-        return (
-            <div className="p-8 text-white">
-                {activeTab} page coming soon...
-            </div>
-        );
+        switch (activeTab) {
+            case "dashboard":
+                return <DashboardPage />;
+            case "tasks":
+                return <TasksPage />;
+            case "worklogs":
+                return <div className="p-8 text-white">Work Logs page coming soon...</div>;
+            case "analytics":
+                return <div className="p-8 text-white">Analytics page coming soon...</div>;
+            case "teams":
+                return <div className="p-8 text-white">Teams page coming soon...</div>;
+            case "settings":
+                return <div className="p-8 text-white">Settings page coming soon...</div>;
+            default:
+                return <DashboardPage />;
+        }
     };
 
     if (view === "loading") {
