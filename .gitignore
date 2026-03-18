@@ -366,3 +366,5 @@ bin/
 obj/
 .vs/
 secrets.json
+/Synergy
+/package-lock.json
