@@ -5,8 +5,8 @@ import { Sidebar } from "./pages/Sidebar";
 import DashboardPage from "./pages/DashboardPage";
 import TasksPage from "./pages/TasksPage";
 import { auth } from "./services/api";
-import { SettingsPage } from "./pages/SettingsPage";
-
+import AnalyticsPage from "./pages/AnalyticsPage";
+import SettingsPage from "./pages/SettingsPage";
 
 export default function App() {
     const [view, setView] = useState("loading");
@@ -99,7 +99,7 @@ export default function App() {
             case "worklogs":
                 return <div className="p-8 text-white">Work Logs page coming soon...</div>;
             case "analytics":
-                return <div className="p-8 text-white">Analytics page coming soon...</div>;
+                return <AnalyticsPage />;
             case "teams":
                 return <div className="p-8 text-white">Teams page coming soon...</div>;
             case "settings":
