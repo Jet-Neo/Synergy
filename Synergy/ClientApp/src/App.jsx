@@ -5,6 +5,8 @@ import { Sidebar } from "./pages/Sidebar";
 import DashboardPage from "./pages/DashboardPage";
 import TasksPage from "./pages/TasksPage";
 import { auth } from "./services/api";
+import { SettingsPage } from "./pages/SettingsPage";
+
 
 export default function App() {
     const [view, setView] = useState("loading");
@@ -101,7 +103,7 @@ export default function App() {
             case "teams":
                 return <div className="p-8 text-white">Teams page coming soon...</div>;
             case "settings":
-                return <div className="p-8 text-white">Settings page coming soon...</div>;
+                return <SettingsPage />;
             default:
                 return <DashboardPage />;
         }
