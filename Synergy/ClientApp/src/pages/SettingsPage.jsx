@@ -64,7 +64,7 @@ export function SettingsPage() {
                                     <label className="block text-white mb-2 text-sm">First Name</label>
                                     <input
                                         type="text"
-                                        defaultValue="Alex"
+                                        defaultValue="First Name"
                                         className="w-full bg-synergy-dark-gray border border-synergy-gray rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-all"
                                     />
                                 </div>
@@ -72,7 +72,7 @@ export function SettingsPage() {
                                     <label className="block text-white mb-2 text-sm">Last Name</label>
                                     <input
                                         type="text"
-                                        defaultValue="Morgan"
+                                        defaultValue="Last Name"
                                         className="w-full bg-synergy-dark-gray border border-synergy-gray rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-all"
                                     />
                                 </div>
@@ -82,7 +82,7 @@ export function SettingsPage() {
                                 <label className="block text-white mb-2 text-sm">Email</label>
                                 <input
                                     type="email"
-                                    defaultValue="alex.morgan@university.edu"
+                                    defaultValue="exampleemail@email.com"
                                     className="w-full bg-synergy-dark-gray border border-synergy-gray rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-all"
                                 />
                             </div>
@@ -91,7 +91,7 @@ export function SettingsPage() {
                                 <label className="block text-white mb-2 text-sm">Role</label>
                                 <input
                                     type="text"
-                                    defaultValue="Team Lead"
+                                    defaultValue="Enter Role Name"
                                     className="w-full bg-synergy-dark-gray border border-synergy-gray rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-all"
                                 />
                             </div>
@@ -99,7 +99,7 @@ export function SettingsPage() {
                             <div>
                                 <label className="block text-white mb-2 text-sm">Bio</label>
                                 <textarea
-                                    defaultValue="Full-stack developer passionate about building great user experiences."
+                                    defaultValue="Enter Bio"
                                     className="w-full bg-synergy-dark-gray border border-synergy-gray rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-all resize-none"
                                     rows={3}
                                 />
