@@ -1,4 +1,4 @@
-import { React } from "react";
+import React from "react";
 import { Plus, Calendar, Clock } from "lucide-react";
 
 export default function WorkLogsPage() {
@@ -27,7 +27,6 @@ export default function WorkLogsPage() {
             date: "2026-02-02",
             hours: 5.5,
         },
-
     ];
 
     const totalToday = 7.5;
@@ -73,13 +72,30 @@ export default function WorkLogsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
-                {/* Date */}
+                {/* Select Date */}
 
                 <div className="bg-synergy-charcoal border border-synergy-dark-gray rounded-xl p-6 shadow-lg shadow-black/30 hover:border-primary/30 transition-all">
 
-                    <div className="text-synergy-light-gray mb-2 flex items-center gap-2">
-                        <Calendar size={16} />
-                        Select Date
+                    <div className="flex items-center gap-3 mb-2">
+
+                        <div
+                            className="
+                                w-10 h-10
+                                bg-primary/10
+                                rounded-lg
+                                flex items-center justify-center
+                            "
+                        >
+                            <Calendar
+                                size={18}
+                                className="text-primary"
+                            />
+                        </div>
+
+                        <span className="text-synergy-light-gray font-medium">
+                            Select Date
+                        </span>
+
                     </div>
 
                     <input
@@ -105,9 +121,26 @@ export default function WorkLogsPage() {
 
                 <div className="bg-synergy-charcoal border border-synergy-dark-gray rounded-xl p-6 shadow-lg shadow-black/30 hover:border-primary/30 transition-all">
 
-                    <div className="text-synergy-light-gray mb-2 flex items-center gap-2">
-                        <Clock size={16} />
-                        Today's Total
+                    <div className="flex items-center gap-3 mb-2">
+
+                        <div
+                            className="
+                                w-10 h-10
+                                bg-synergy-green/10
+                                rounded-lg
+                                flex items-center justify-center
+                            "
+                        >
+                            <Clock
+                                size={18}
+                                className="text-synergy-green"
+                            />
+                        </div>
+
+                        <span className="text-synergy-light-gray font-medium">
+                            Today's Total
+                        </span>
+
                     </div>
 
                     <div className="text-3xl text-white font-bold">
@@ -120,8 +153,26 @@ export default function WorkLogsPage() {
 
                 <div className="bg-synergy-charcoal border border-synergy-dark-gray rounded-xl p-6 shadow-lg shadow-black/30 hover:border-primary/30 transition-all">
 
-                    <div className="text-synergy-light-gray mb-2">
-                        This Week
+                    <div className="flex items-center gap-3 mb-2">
+
+                        <div
+                            className="
+                                w-10 h-10
+                                bg-primary/10
+                                rounded-lg
+                                flex items-center justify-center
+                            "
+                        >
+                            <Clock
+                                size={18}
+                                className="text-primary"
+                            />
+                        </div>
+
+                        <span className="text-synergy-light-gray font-medium">
+                            This Week
+                        </span>
+
                     </div>
 
                     <div className="text-3xl text-primary font-bold">
