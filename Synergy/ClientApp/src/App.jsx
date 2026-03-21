@@ -4,6 +4,7 @@ import { AuthPage } from "./pages/LoginPage";
 import { Sidebar } from "./pages/Sidebar";
 import DashboardPage from "./pages/DashboardPage";
 import TasksPage from "./pages/TasksPage";
+import WorkLogsPage from "./pages/WorkLogsPage";
 import { auth } from "./services/api";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import { SettingsPage } from "./pages/SettingsPage";
@@ -98,7 +99,7 @@ export default function App() {
             case "tasks":
                 return <TasksPage />;
             case "worklogs":
-                return <div className="p-8 text-white">Work Logs page coming soon...</div>;
+                return <WorkLogsPage />;
             case "analytics":
                 return <AnalyticsPage />;
             case "teams":
