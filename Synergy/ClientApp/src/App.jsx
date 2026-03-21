@@ -6,7 +6,7 @@ import DashboardPage from "./pages/DashboardPage";
 import TasksPage from "./pages/TasksPage";
 import { auth } from "./services/api";
 import AnalyticsPage from "./pages/AnalyticsPage";
-import SettingsPage from "./pages/SettingsPage";
+import { SettingsPage } from "./pages/SettingsPage";
 
 export default function App() {
     const [view, setView] = useState("loading");
