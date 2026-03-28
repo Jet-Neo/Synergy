@@ -19,24 +19,19 @@ export const tasks = {
     getAll: () => request("/tasks"),
 
     create: async (taskData) => {
-        try {
-            const res = await fetch(`${API_BASE}/tasks`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(taskData),
-            });
+        const res = await fetch(`${API_BASE}/tasks`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(taskData),
+        });
 
-            if (!res.ok) {
-                throw new Error("Failed to create task");
-            }
-
-            return await res.json();
-        } catch (err) {
-            console.error(err);
-            throw err;
+        if (!res.ok) {
+            throw new Error("Failed to create task");
         }
+
+        return await res.json();
     }
 };
 
