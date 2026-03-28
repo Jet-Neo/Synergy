@@ -1,7 +1,7 @@
 import React from "react";
 import { Plus, Calendar, Clock } from "lucide-react";
 
-export default function WorkLogsPage() {
+export default function WorkLogsPage({ onTabChange }) { 
     const workLogs = [
         {
             id: 1,
@@ -50,6 +50,7 @@ export default function WorkLogsPage() {
                 </div>
 
                 <button
+                    onClick={() => onTabChange("log-time")} 
                     className="
                         flex items-center gap-2
                         bg-primary hover:bg-primary/90

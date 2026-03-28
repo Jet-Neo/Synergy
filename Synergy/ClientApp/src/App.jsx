@@ -5,6 +5,7 @@ import { Sidebar } from "./pages/Sidebar";
 import DashboardPage from "./pages/DashboardPage";
 import TasksPage from "./pages/TasksPage";
 import WorkLogsPage from "./pages/WorkLogsPage";
+import LogTimePage from "./pages/LogTimePage";
 import { auth } from "./services/api";
 
 export default function App() {
@@ -96,7 +97,9 @@ export default function App() {
             case "tasks":
                 return <TasksPage />;
             case "worklogs":
-                return <WorkLogsPage />;
+                return <WorkLogsPage onTabChange={setActiveTab} />;
+            case "log-time":
+                return <LogTimePage />;
             case "analytics":
                 return <div className="p-8 text-white">Analytics page coming soon...</div>;
             case "teams":
