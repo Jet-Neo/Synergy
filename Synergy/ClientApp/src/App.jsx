@@ -102,7 +102,7 @@ export default function App() {
             case "worklogs":
                 return <WorkLogsPage onTabChange={setActiveTab} />;
             case "log-time":
-                return <LogTimePage />;
+                return <LogTimePage onTabChange={setActiveTab} />;
             case "analytics":
                 return <AnalyticsPage />;
             case "teams":
