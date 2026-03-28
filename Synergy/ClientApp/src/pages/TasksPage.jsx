@@ -21,15 +21,29 @@ export default function TasksPage() {
     const [tasks, setTasks] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        loadTasks();
-    }, []);
+    
 
     const loadTasks = async () => {
         try {
             setIsLoading(true);
             const response = await tasksAPI.getAll();
-            setTasks(response || []);
+
+            const mappedTasks = (response || []).map(task => ({
+                id: task.id,
+                title: task.title,
+                description: task.description,
+                deadline: task.dueDate,
+                assignee:
+                    task.assignedToUser?.name ||
+                    task.assigneeName ||
+                    "Unassigned",
+                priority: (task.priority || "medium").toLowerCase(),
+                status: (task.status || "pending")
+                    .toLowerCase()
+                    .replace(" ", "-"),
+            }));
+
+            setTasks(mappedTasks);
         } catch (error) {
             console.error("Failed to load tasks:", error);
             setTasks([]);
@@ -37,6 +51,10 @@ export default function TasksPage() {
             setIsLoading(false);
         }
     };
+
+    useEffect(() => {
+        loadTasks();
+    }, []);
 
     const mockTasks = [
         {
@@ -109,8 +127,24 @@ export default function TasksPage() {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        const payload = {
+            title: formData.title,
+            description: formData.description,
+            dueDate: formData.deadline
+                ? new Date(formData.deadline).toISOString()
+                : null,
+            priority:
+                formData.priority.charAt(0).toUpperCase() +
+                formData.priority.slice(1),
+            status: "Pending",
+            assignedToUserId: null,
+            assigneeName: formData.assignee,
+            teamId: null,
+        };
+
         try {
-            await tasksAPI.create(formData);
+            await tasksAPI.create(payload);
+
             setShowModal(false);
             setFormData({
                 title: "",
@@ -119,14 +153,15 @@ export default function TasksPage() {
                 assignee: "",
                 priority: "medium",
             });
-            loadTasks();
+
+            await loadTasks();
         } catch (error) {
             console.error("Failed to create task:", error);
             alert("Failed to create task. Please try again.");
         }
     };
 
-    const displayTasks = tasks.length > 0 ? tasks : mockTasks;
+    const displayTasks = tasks;
 
     return (
         <div className="p-8 space-y-6">
