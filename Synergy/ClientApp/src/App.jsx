@@ -7,6 +7,9 @@ import TasksPage from "./pages/TasksPage";
 import WorkLogsPage from "./pages/WorkLogsPage";
 import LogTimePage from "./pages/LogTimePage";
 import { auth } from "./services/api";
+import AnalyticsPage from "./pages/AnalyticsPage";
+import { SettingsPage } from "./pages/SettingsPage";
+import  TeamsPage  from "./pages/TeamsPage";
 
 export default function App() {
     const [view, setView] = useState("loading");
@@ -101,11 +104,11 @@ export default function App() {
             case "log-time":
                 return <LogTimePage />;
             case "analytics":
-                return <div className="p-8 text-white">Analytics page coming soon...</div>;
+                return <AnalyticsPage />;
             case "teams":
-                return <div className="p-8 text-white">Teams page coming soon...</div>;
+                return <TeamsPage />;
             case "settings":
-                return <div className="p-8 text-white">Settings page coming soon...</div>;
+                return <SettingsPage />;
             default:
                 return <DashboardPage />;
         }
