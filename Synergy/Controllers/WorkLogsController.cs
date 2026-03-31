@@ -27,13 +27,27 @@ namespace Synergy.Controllers
             return Ok(logs);
         }
 
+        [HttpGet("{id}")]
+        public async Task<ActionResult<WorkLog>> GetWorkLog(int id)
+        {
+            var workLog = await _context.WorkLogs
+                .Include(w => w.Task)
+                .Include(w => w.User)
+                .FirstOrDefaultAsync(w => w.Id == id);
+
+            if (workLog == null)
+                return NotFound();
+
+            return Ok(workLog);
+        }
+
         [HttpPost]
         public async Task<ActionResult<WorkLog>> CreateWorkLog(WorkLog workLog)
         {
             _context.WorkLogs.Add(workLog);
             await _context.SaveChangesAsync();
 
-            return Ok(workLog);
+            return CreatedAtAction(nameof(GetWorkLog), new { id = workLog.Id }, workLog);
         }
     }
 }

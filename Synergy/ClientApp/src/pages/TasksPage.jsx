@@ -21,14 +21,12 @@ export default function TasksPage() {
     const [tasks, setTasks] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    
-
     const loadTasks = async () => {
         try {
             setIsLoading(true);
             const response = await tasksAPI.getAll();
 
-            const mappedTasks = (response || []).map(task => ({
+            const mappedTasks = (response || []).map((task) => ({
                 id: task.id,
                 title: task.title,
                 description: task.description,
@@ -56,70 +54,25 @@ export default function TasksPage() {
         loadTasks();
     }, []);
 
-    const mockTasks = [
-        {
-            id: 1,
-            title: "Design UI mockups for dashboard",
-            description: "Create modern, clean interface designs",
-            deadline: "2026-02-22",
-            assignee: "Alex Morgan",
-            status: "completed",
-            priority: "high",
-        },
-        {
-            id: 2,
-            title: "Implement user authentication",
-            description: "Add login and signup functionality",
-            deadline: "2026-02-25",
-            assignee: "Sarah Chen",
-            status: "in-progress",
-            priority: "high",
-        },
-        {
-            id: 3,
-            title: "Write API documentation",
-            description: "Document all endpoints and usage",
-            deadline: "2026-02-28",
-            assignee: "Mike Johnson",
-            status: "in-progress",
-            priority: "medium",
-        },
-        {
-            id: 4,
-            title: "Set up database schema",
-            description: "Design and implement database structure",
-            deadline: "2026-03-02",
-            assignee: "Emma Davis",
-            status: "pending",
-            priority: "high",
-        },
-        {
-            id: 5,
-            title: "Create landing page",
-            description: "Build marketing landing page",
-            deadline: "2026-03-05",
-            assignee: "James Wilson",
-            status: "pending",
-            priority: "low",
-        },
-    ];
-
     const getStatusBadge = (status) => {
+        const normalized = status?.toLowerCase();
+
         const styles = {
             completed: "bg-primary/10 text-primary border-primary/30",
-            "in-progress": "bg-synergy-blue/10 text-synergy-blue border-synergy-blue/30",
-            pending: "bg-synergy-gray/20 text-synergy-light-gray border-synergy-gray/40",
+            "in-progress": "bg-blue-500/10 text-blue-400 border-blue-500/30",
+            pending:
+                "bg-synergy-gray/20 text-synergy-light-gray border-synergy-gray/40",
         };
 
-        return styles[status] || styles.pending;
+        return styles[normalized] || styles.pending;
     };
 
     const getPriorityIcon = (priority) => {
         if (priority === "high") {
-            return <AlertCircle className="text-synergy-red" size={16} />;
+            return <AlertCircle className="text-red-500" size={16} />;
         }
         if (priority === "medium") {
-            return <Clock className="text-synergy-yellow" size={16} />;
+            return <Clock className="text-orange-400" size={16} />;
         }
         return <CheckCircle2 className="text-synergy-light-gray" size={16} />;
     };
@@ -165,7 +118,6 @@ export default function TasksPage() {
 
     return (
         <div className="p-8 space-y-6">
-            {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-4xl text-white mb-2 font-bold">
@@ -185,23 +137,22 @@ export default function TasksPage() {
                 </button>
             </div>
 
-            {/* Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-synergy-charcoal border border-synergy-dark-gray rounded-xl p-6 shadow-lg shadow-black/30 hover:border-primary/30 transition-all">
+                <div className="bg-synergy-charcoal border border-primary/20 rounded-xl p-6 shadow-lg shadow-black/30 hover:border-primary/40 transition-all">
                     <div className="text-synergy-light-gray mb-2">Total Tasks</div>
                     <div className="text-3xl text-white font-bold">
                         {displayTasks.length}
                     </div>
                 </div>
 
-                <div className="bg-synergy-charcoal border border-synergy-dark-gray rounded-xl p-6 shadow-lg shadow-black/30 hover:border-primary/30 transition-all">
+                <div className="bg-synergy-charcoal border border-primary/20 rounded-xl p-6 shadow-lg shadow-black/30 hover:border-primary/40 transition-all">
                     <div className="text-synergy-light-gray mb-2">In Progress</div>
-                    <div className="text-3xl text-synergy-blue font-bold">
+                    <div className="text-3xl text-blue-400 font-bold">
                         {displayTasks.filter((t) => t.status === "in-progress").length}
                     </div>
                 </div>
 
-                <div className="bg-synergy-charcoal border border-synergy-dark-gray rounded-xl p-6 shadow-lg shadow-black/30 hover:border-primary/30 transition-all">
+                <div className="bg-synergy-charcoal border border-primary/20 rounded-xl p-6 shadow-lg shadow-black/30 hover:border-primary/40 transition-all">
                     <div className="text-synergy-light-gray mb-2">Completed</div>
                     <div className="text-3xl text-primary font-bold">
                         {displayTasks.filter((t) => t.status === "completed").length}
@@ -209,8 +160,7 @@ export default function TasksPage() {
                 </div>
             </div>
 
-            {/* Tasks Table */}
-            <div className="bg-synergy-charcoal border border-synergy-dark-gray rounded-xl overflow-hidden shadow-lg shadow-black/30">
+            <div className="bg-synergy-charcoal border border-primary/20 rounded-xl overflow-hidden shadow-lg shadow-black/30">
                 <div className="overflow-x-auto">
                     <table className="w-full">
                         <thead className="bg-synergy-dark-gray/60 border-b border-synergy-dark-gray backdrop-blur-sm">
@@ -256,7 +206,7 @@ export default function TasksPage() {
                                 displayTasks.map((task, index) => (
                                     <tr
                                         key={task.id}
-                                        className={`border-b border-synergy-dark-gray hover:bg-synergy-dark-gray/60 hover:border-primary/20 transition-all ${index === displayTasks.length - 1 ? "border-b-0" : ""
+                                        className={`border-b border-synergy-dark-gray hover:bg-synergy-dark-gray/40 hover:border-primary/20 transition-all ${index === displayTasks.length - 1 ? "border-b-0" : ""
                                             }`}
                                     >
                                         <td className="px-6 py-4">
@@ -314,10 +264,9 @@ export default function TasksPage() {
                 </div>
             </div>
 
-            {/* Create Task Modal */}
             {showModal && (
                 <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-6 z-50">
-                    <div className="bg-synergy-charcoal border border-synergy-dark-gray rounded-2xl p-8 max-w-lg w-full shadow-2xl shadow-black/50">
+                    <div className="bg-synergy-charcoal border border-primary/20 rounded-2xl p-8 max-w-lg w-full shadow-2xl shadow-black/50">
                         <h2 className="text-2xl text-white mb-6 font-bold">
                             Create New Task
                         </h2>

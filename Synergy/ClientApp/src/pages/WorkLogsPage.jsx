@@ -1,271 +1,445 @@
-import React from "react";
-import { Plus, Calendar, Clock } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Clock, Calendar, Plus, TrendingUp } from "lucide-react";
+import { workLogs as workLogsAPI, tasks as tasksAPI } from "../services/api";
 
 export default function WorkLogsPage() {
-    const workLogs = [
-        {
-            id: 1,
-            title: "API Integration",
-            user: "Sarah Chen",
-            description: "Completed payment gateway integration and testing",
-            date: "2026-02-03",
-            hours: 4.5,
-        },
-        {
-            id: 2,
-            title: "Database Design",
-            user: "Mike Johnson",
-            description: "Designed schema for user and transaction tables",
-            date: "2026-02-03",
-            hours: 3,
-        },
-        {
-            id: 3,
-            title: "User Interface Mockups",
-            user: "Emma Williams",
-            description: "Created mockups for dashboard and analytics screens",
-            date: "2026-02-02",
-            hours: 5.5,
-        },
-    ];
+    const [formData, setFormData] = useState({
+        taskId: "",
+        userName: "",
+        description: "",
+        logDate: new Date().toISOString().split("T")[0],
+        hoursWorked: "",
+        status: "",
+    });
 
-    const totalToday = 7.5;
-    const totalWeek = 142.5;
+    const [workLogs, setWorkLogs] = useState([]);
+    const [tasks, setTasks] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [selectedDate, setSelectedDate] = useState("");
+
+    const filterDateInputRef = useRef(null);
+
+    useEffect(() => {
+        loadData();
+    }, []);
+
+    const loadData = async () => {
+        try {
+            setIsLoading(true);
+
+            const [workLogsRes, tasksRes] = await Promise.all([
+                workLogsAPI.getAll(),
+                tasksAPI.getAll(),
+            ]);
+
+            const mappedLogs = (workLogsRes || [])
+                .map((log) => ({
+                    id: log.id,
+                    taskId: log.taskId,
+                    task: log.task?.title || "Untitled Task",
+                    date: log.logDate,
+                    hours: Number(log.hoursWorked || 0),
+                    member: log.user?.name || log.userName || "Unknown User",
+                    description: log.description || "",
+                }))
+                .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            const mappedTasks = (tasksRes || []).map((task) => ({
+                id: task.id,
+                title: task.title,
+                description: task.description,
+                status: task.status,
+                priority: task.priority,
+                dueDate: task.dueDate,
+                assigneeName: task.assigneeName,
+                assignedToUserId: task.assignedToUserId,
+                teamId: task.teamId,
+            }));
+
+            setWorkLogs(mappedLogs);
+            setTasks(mappedTasks);
+        } catch (error) {
+            console.error("Failed to load data:", error);
+            setWorkLogs([]);
+            setTasks([]);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        const selectedTask = tasks.find(
+            (task) => task.id === Number(formData.taskId)
+        );
+
+        if (!selectedTask) {
+            alert("Please select a valid task.");
+            return;
+        }
+
+        try {
+            await workLogsAPI.create({
+                taskId: Number(formData.taskId),
+                userId: null,
+                userName: formData.userName,
+                description: formData.description,
+                logDate: formData.logDate
+                    ? new Date(formData.logDate).toISOString()
+                    : new Date().toISOString(),
+                hoursWorked: Number(formData.hoursWorked),
+            });
+
+            if (formData.status) {
+                await tasksAPI.update(selectedTask.id, {
+                    id: selectedTask.id,
+                    title: selectedTask.title,
+                    description: selectedTask.description || "",
+                    status: formData.status,
+                    priority: selectedTask.priority || "Medium",
+                    dueDate: selectedTask.dueDate,
+                    assignedToUserId: selectedTask.assignedToUserId,
+                    assigneeName: selectedTask.assigneeName,
+                    teamId: selectedTask.teamId,
+                });
+            }
+
+            setFormData({
+                taskId: "",
+                userName: "",
+                description: "",
+                logDate: new Date().toISOString().split("T")[0],
+                hoursWorked: "",
+                status: "",
+            });
+
+            await loadData();
+        } catch (error) {
+            console.error("Failed to log work:", error);
+            alert("Failed to log work. Please try again.");
+        }
+    };
+
+    const filteredWorkLogs = useMemo(() => {
+        let logs = [...workLogs];
+
+        if (selectedDate) {
+            logs = logs.filter((log) => {
+                const logDate = new Date(log.date).toISOString().split("T")[0];
+                return logDate === selectedDate;
+            });
+        }
+
+        return logs.sort((a, b) => new Date(b.date) - new Date(a.date));
+    }, [workLogs, selectedDate]);
+
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+
+    const last7DaysLogs = workLogs.filter((log) => {
+        const logDate = new Date(log.date);
+        return logDate >= sevenDaysAgo;
+    });
+
+    const totalHours = last7DaysLogs.reduce(
+        (sum, log) => sum + Number(log.hours || 0),
+        0
+    );
+
+    const workDays = new Set(
+        last7DaysLogs.map((log) =>
+            new Date(log.date).toISOString().split("T")[0]
+        )
+    ).size;
+
+    const avgHoursPerDay =
+        workDays > 0 ? (totalHours / workDays).toFixed(1) : "0.0";
+
+    const inputClass =
+        "w-full bg-synergy-dark-gray border border-synergy-gray rounded-lg px-4 py-3 text-white placeholder:text-synergy-light-gray/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all";
+
+    const openDateFilter = () => {
+        const input = filterDateInputRef.current;
+        if (!input) return;
+
+        if (typeof input.showPicker === "function") {
+            input.showPicker();
+        } else {
+            input.click();
+            input.focus();
+        }
+    };
 
     return (
         <div className="p-8 space-y-6">
-
-            {/* Header */}
-
-            <div className="flex items-center justify-between">
-
-                <div>
-                    <h1 className="text-4xl text-white mb-2 font-bold">
-                        Work Log
-                    </h1>
-
-                    <p className="text-synergy-light-gray">
-                        Track time spent on tasks
-                    </p>
-                </div>
-
-                <button
-                    className="
-                        flex items-center gap-2
-                        bg-primary hover:bg-primary/90
-                        text-white
-                        px-6 py-3
-                        rounded-lg
-                        shadow-lg shadow-primary/20
-                        hover:shadow-primary/40
-                        transition-all
-                        font-semibold
-                    "
-                >
-                    <Plus size={20} />
-                    Log Time
-                </button>
-
+            <div>
+                <h1 className="text-4xl text-white mb-2 font-bold">Work Logs</h1>
+                <p className="text-synergy-light-gray">
+                    Track your time and monitor workload
+                </p>
             </div>
-
-            {/* Stats */}
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-
-                {/* Select Date */}
-
-                <div className="bg-synergy-charcoal border border-synergy-dark-gray rounded-xl p-6 shadow-lg shadow-black/30 hover:border-primary/30 transition-all">
-
-                    <div className="flex items-center gap-3 mb-2">
-
-                        <div
-                            className="
-                                w-10 h-10
-                                bg-primary/10
-                                rounded-lg
-                                flex items-center justify-center
-                            "
-                        >
-                            <Calendar
-                                size={18}
-                                className="text-primary"
-                            />
+                <div className="bg-synergy-charcoal border border-primary/20 rounded-xl p-6 shadow-md shadow-primary/5 hover:border-primary/30 transition-all">
+                    <div className="flex items-center gap-3 mb-3">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                            <Clock className="text-primary" size={20} />
                         </div>
-
-                        <span className="text-synergy-light-gray font-medium">
-                            Select Date
-                        </span>
-
+                        <div className="text-synergy-light-gray">Total Hours</div>
                     </div>
-
-                    <input
-                        type="date"
-                        className="
-                            w-full
-                            bg-synergy-dark-gray
-                            border border-synergy-gray
-                            rounded-lg
-                            px-4 py-3
-                            text-white
-                            focus:outline-none
-                            focus:border-primary
-                            focus:ring-1
-                            focus:ring-primary/40
-                            transition-all
-                        "
-                    />
-
+                    <div className="text-3xl text-white font-bold">{totalHours}h</div>
+                    <div className="text-sm text-synergy-light-gray mt-1">
+                        Last 7 days
+                    </div>
                 </div>
 
-                {/* Today's Total */}
-
-                <div className="bg-synergy-charcoal border border-synergy-dark-gray rounded-xl p-6 shadow-lg shadow-black/30 hover:border-primary/30 transition-all">
-
-                    <div className="flex items-center gap-3 mb-2">
-
-                        <div
-                            className="
-                                w-10 h-10
-                                bg-synergy-green/10
-                                rounded-lg
-                                flex items-center justify-center
-                            "
-                        >
-                            <Clock
-                                size={18}
-                                className="text-synergy-green"
-                            />
+                <div className="bg-synergy-charcoal border border-primary/20 rounded-xl p-6 shadow-md shadow-primary/5 hover:border-primary/30 transition-all">
+                    <div className="flex items-center gap-3 mb-3">
+                        <div className="p-2 bg-blue-500/10 rounded-lg">
+                            <TrendingUp className="text-blue-400" size={20} />
                         </div>
-
-                        <span className="text-synergy-light-gray font-medium">
-                            Today's Total
-                        </span>
-
+                        <div className="text-synergy-light-gray">Daily Average</div>
                     </div>
-
                     <div className="text-3xl text-white font-bold">
-                        {totalToday}h
+                        {avgHoursPerDay}h
                     </div>
-
+                    <div className="text-sm text-synergy-light-gray mt-1">Per day</div>
                 </div>
 
-                {/* This Week */}
+                <div className="bg-synergy-charcoal border border-primary/20 rounded-xl p-6 shadow-md shadow-primary/5 hover:border-primary/30 transition-all">
+                    <div className="flex items-center gap-3 mb-3">
+                        <div className="p-2 bg-orange-500/10 rounded-lg">
+                            <Calendar className="text-orange-400" size={20} />
+                        </div>
+                        <div className="text-synergy-light-gray">Work Days</div>
+                    </div>
+                    <div className="text-3xl text-white font-bold">{workDays}</div>
+                    <div className="text-sm text-synergy-light-gray mt-1">This week</div>
+                </div>
+            </div>
 
-                <div className="bg-synergy-charcoal border border-synergy-dark-gray rounded-xl p-6 shadow-lg shadow-black/30 hover:border-primary/30 transition-all">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-1">
+                    <div className="bg-synergy-charcoal border border-primary/20 rounded-xl p-6 shadow-md shadow-primary/5 sticky top-8 hover:border-primary/30 transition-all">
+                        <h3 className="text-white mb-6 flex items-center gap-2 font-semibold text-2xl">
+                            <Plus size={20} className="text-primary" />
+                            Log Work Hours
+                        </h3>
 
-                    <div className="flex items-center gap-3 mb-2">
+                        <form onSubmit={handleSubmit} className="space-y-5">
+                            <div>
+                                <label className="block text-white mb-2 text-sm">
+                                    Select Task
+                                </label>
+                                <select
+                                    value={formData.taskId}
+                                    onChange={(e) =>
+                                        setFormData({ ...formData, taskId: e.target.value })
+                                    }
+                                    className={inputClass}
+                                    required
+                                >
+                                    <option value="">Choose a task...</option>
+                                    {tasks.map((task) => (
+                                        <option key={task.id} value={task.id}>
+                                            {task.title}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
 
-                        <div
-                            className="
-                                w-10 h-10
-                                bg-primary/10
-                                rounded-lg
-                                flex items-center justify-center
-                            "
-                        >
-                            <Clock
-                                size={18}
-                                className="text-primary"
-                            />
+                            <div>
+                                <label className="block text-white mb-2 text-sm">
+                                    Team Member
+                                </label>
+                                <input
+                                    type="text"
+                                    value={formData.userName}
+                                    onChange={(e) =>
+                                        setFormData({ ...formData, userName: e.target.value })
+                                    }
+                                    className={inputClass}
+                                    placeholder="Enter team member name"
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-white mb-2 text-sm">
+                                    Description
+                                </label>
+                                <textarea
+                                    value={formData.description}
+                                    onChange={(e) =>
+                                        setFormData({
+                                            ...formData,
+                                            description: e.target.value,
+                                        })
+                                    }
+                                    className={`${inputClass} resize-none`}
+                                    placeholder="What work was completed?"
+                                    rows={4}
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-white mb-2 text-sm">Date</label>
+                                <input
+                                    type="date"
+                                    value={formData.logDate}
+                                    onChange={(e) =>
+                                        setFormData({ ...formData, logDate: e.target.value })
+                                    }
+                                    className={inputClass}
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-white mb-2 text-sm">
+                                    Hours Worked
+                                </label>
+                                <input
+                                    type="number"
+                                    value={formData.hoursWorked}
+                                    onChange={(e) =>
+                                        setFormData({
+                                            ...formData,
+                                            hoursWorked: e.target.value,
+                                        })
+                                    }
+                                    className={inputClass}
+                                    placeholder="0.0"
+                                    step="0.5"
+                                    min="0"
+                                    max="24"
+                                    required
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="block text-white mb-2 text-sm">
+                                    Task Status
+                                </label>
+                                <select
+                                    value={formData.status}
+                                    onChange={(e) =>
+                                        setFormData({ ...formData, status: e.target.value })
+                                    }
+                                    className={inputClass}
+                                >
+                                    <option value="">No change</option>
+                                    <option value="In Progress">Mark as In Progress</option>
+                                    <option value="Completed">Mark as Completed</option>
+                                </select>
+                            </div>
+
+                            <button
+                                type="submit"
+                                className="w-full bg-primary hover:bg-primary/90 text-white py-4 rounded-lg shadow-md shadow-primary/10 hover:shadow-primary/20 transition-all font-semibold text-lg"
+                            >
+                                Log Hours
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <div className="lg:col-span-2">
+                    <div className="bg-synergy-charcoal border border-primary/20 rounded-xl p-6 shadow-md shadow-primary/5 hover:border-primary/30 transition-all">
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-white font-semibold text-2xl">
+                                Recent Work Logs
+                            </h3>
+
+                            <div className="flex items-center gap-3">
+                                <button
+                                    type="button"
+                                    onClick={openDateFilter}
+                                    className="text-synergy-light-gray hover:text-primary text-sm transition-all"
+                                >
+                                    Filter by date
+                                </button>
+
+                                {selectedDate && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectedDate("")}
+                                        className="text-sm text-synergy-light-gray hover:text-primary transition-all"
+                                    >
+                                        Clear filter
+                                    </button>
+                                )}
+
+                                <input
+                                    ref={filterDateInputRef}
+                                    type="date"
+                                    value={selectedDate}
+                                    onChange={(e) => setSelectedDate(e.target.value)}
+                                    className="absolute opacity-0 pointer-events-none w-0 h-0"
+                                    tabIndex={-1}
+                                    aria-hidden="true"
+                                />
+                            </div>
                         </div>
 
-                        <span className="text-synergy-light-gray font-medium">
-                            This Week
-                        </span>
+                        <div className="space-y-4">
+                            {isLoading ? (
+                                <div className="text-center py-8 text-synergy-light-gray">
+                                    Loading work logs...
+                                </div>
+                            ) : filteredWorkLogs.length === 0 ? (
+                                <div className="text-center py-8 text-synergy-light-gray">
+                                    No work logs yet. Start tracking your time!
+                                </div>
+                            ) : (
+                                filteredWorkLogs.map((log) => (
+                                    <div
+                                        key={log.id}
+                                        className="bg-synergy-charcoal border border-synergy-dark-gray rounded-xl p-5 hover:border-primary/30 transition-all"
+                                    >
+                                        <div className="flex items-start justify-between gap-4">
+                                            <div className="flex-1">
+                                                <div className="text-white mb-2 font-semibold text-2xl">
+                                                    {log.task}
+                                                </div>
 
-                    </div>
+                                                <div className="text-base text-synergy-light-gray mb-3">
+                                                    {log.description}
+                                                </div>
 
-                    <div className="text-3xl text-primary font-bold">
-                        {totalWeek}h
-                    </div>
+                                                <div className="flex items-center gap-4 text-sm text-synergy-light-gray">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <Calendar size={14} />
+                                                        {new Date(log.date).toLocaleDateString(
+                                                            "en-US",
+                                                            {
+                                                                month: "short",
+                                                                day: "numeric",
+                                                                year: "numeric",
+                                                            }
+                                                        )}
+                                                    </div>
+                                                    <div>by {log.member}</div>
+                                                </div>
+                                            </div>
 
-                </div>
-
-            </div>
-
-            {/* Work Logs Table */}
-
-            <div className="bg-synergy-charcoal border border-synergy-dark-gray rounded-xl overflow-hidden shadow-lg shadow-black/30">
-
-                <div className="overflow-x-auto">
-
-                    <table className="w-full">
-
-                        <thead className="bg-synergy-dark-gray/60 border-b border-synergy-dark-gray">
-
-                            <tr>
-
-                                <th className="text-left px-6 py-4 text-synergy-light-gray font-semibold">
-                                    Task
-                                </th>
-
-                                <th className="text-left px-6 py-4 text-synergy-light-gray font-semibold">
-                                    User
-                                </th>
-
-                                <th className="text-left px-6 py-4 text-synergy-light-gray font-semibold">
-                                    Date
-                                </th>
-
-                                <th className="text-left px-6 py-4 text-synergy-light-gray font-semibold">
-                                    Hours
-                                </th>
-
-                            </tr>
-
-                        </thead>
-
-                        <tbody>
-
-                            {workLogs.map((log, index) => (
-
-                                <tr
-                                    key={log.id}
-                                    className={`
-                                        border-b border-synergy-dark-gray
-                                        hover:bg-synergy-dark-gray/60
-                                        hover:border-primary/20
-                                        transition-all
-                                        ${index === workLogs.length - 1 ? "border-b-0" : ""}
-                                    `}
-                                >
-
-                                    <td className="px-6 py-4">
-
-                                        <div className="text-white mb-1 font-medium">
-                                            {log.title}
+                                            <div className="bg-primary/10 px-4 py-3 rounded-lg flex items-center gap-2 shrink-0">
+                                                <Clock size={16} className="text-primary" />
+                                                <span className="text-primary font-semibold text-xl">
+                                                    {log.hours}h
+                                                </span>
+                                            </div>
                                         </div>
-
-                                        <div className="text-sm text-synergy-light-gray">
-                                            {log.description}
-                                        </div>
-
-                                    </td>
-
-                                    <td className="px-6 py-4 text-white">
-                                        {log.user}
-                                    </td>
-
-                                    <td className="px-6 py-4 text-synergy-light-gray">
-                                        {new Date(log.date).toLocaleDateString()}
-                                    </td>
-
-                                    <td className="px-6 py-4 text-white font-semibold">
-                                        {log.hours}h
-                                    </td>
-
-                                </tr>
-
-                            ))}
-
-                        </tbody>
-
-                    </table>
-
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
                 </div>
-
             </div>
-
         </div>
     );
 }

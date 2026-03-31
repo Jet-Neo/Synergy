@@ -32,11 +32,115 @@ export const tasks = {
         }
 
         return await res.json();
+    },
+
+    update: async (id, taskData) => {
+        const res = await fetch(`${API_BASE}/tasks/${id}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(taskData),
+        });
+
+        if (!res.ok) {
+            throw new Error("Failed to update task");
+        }
+
+        return res.status === 204 ? null : await res.json();
     }
 };
 
 export const workLogs = {
-    getAll: () => request("/worklogs")
+    getAll: () => request("/worklogs"),
+
+    create: async (workLogData) => {
+        const res = await fetch(`${API_BASE}/worklogs`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(workLogData),
+        });
+
+        if (!res.ok) {
+            throw new Error("Failed to create work log");
+        }
+
+        return await res.json();
+    }
+};
+
+export const teams = {
+    getAll: () => request("/teams"),
+
+    create: async (teamData) => {
+        const res = await fetch(`${API_BASE}/teams`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(teamData),
+        });
+
+        if (!res.ok) {
+            throw new Error("Failed to create team");
+        }
+
+        return await res.json();
+    }
+};
+
+export const users = {
+    getAll: () => request("/users"),
+
+    create: async (userData) => {
+        const res = await fetch(`${API_BASE}/users`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(userData),
+        });
+
+        if (!res.ok) {
+            throw new Error("Failed to create user");
+        }
+
+        return await res.json();
+    }
+};
+
+export const teamMembers = {
+    getAll: () => request("/teammembers"),
+
+    create: async (teamMemberData) => {
+        const res = await fetch(`${API_BASE}/teammembers`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(teamMemberData),
+        });
+
+        if (!res.ok) {
+            throw new Error("Failed to add member to team");
+        }
+
+        return await res.json();
+    },
+
+    remove: async (id) => {
+        const res = await fetch(`${API_BASE}/teammembers/${id}`, {
+            method: "DELETE",
+        });
+
+        if (!res.ok) {
+            throw new Error("Failed to remove member from team");
+        }
+
+        return true;
+    }
 };
 
 export const auth = {
