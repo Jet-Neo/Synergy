@@ -37,7 +37,7 @@ export function AuthPage({ mode, onSubmit, onToggleMode, onBack, error }) {
         const emailOk = validateEmail(email);
 
         if (mode === "login") {
-            if (!emailOk || !password) {
+            if (!emailOk || !password.trim()) {
                 if (!emailOk) setEmailValid(false);
                 setIsSubmitting(false);
                 return;
@@ -103,104 +103,71 @@ export function AuthPage({ mode, onSubmit, onToggleMode, onBack, error }) {
                         </div>
                     )}
 
-                    <form onSubmit={handleSubmit} className="space-y-5">
-                        {mode === "signup" && (
-                            <div>
-                                <label className="block text-white mb-2 text-sm">Full Name</label>
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        {mode !== "login" && (
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-200">Username</label>
                                 <div className="relative">
-                                    <User
-                                        className="absolute left-4 top-1/2 -translate-y-1/2 text-synergy-light-gray"
-                                        size={18}
-                                    />
+                                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                                     <input
                                         type="text"
                                         value={name}
-                                        onChange={(e) => {
-                                            setPassword(e.target.value);
-                                            if (mode !== "login") {
-                                                validatePassword(e.target.value);
-                                            }
-                                        }}
-                                        placeholder="Enter your full name"
-                                        className="w-full bg-synergy-dark-gray border border-synergy-gray rounded-lg pl-12 pr-4 py-3 text-white placeholder:text-synergy-light-gray focus:outline-none focus:border-primary transition-all"
-                                        aria-invalid={!nameValid}
-                                        title={
-                                            !nameValid
-                                                ? "Full name must be at least 2 characters."
-                                                : ""
-                                        }
+                                        onChange={(e) => setName(e.target.value)}
+                                        placeholder="your username"
+                                        className={`w-full rounded-xl border bg-white/5 py-3 pl-10 pr-4 text-white outline-none transition ${nameValid
+                                                ? "border-white/10 focus:border-emerald-400"
+                                                : "border-red-400 focus:border-red-400"
+                                            }`}
                                     />
-
                                 </div>
-
                                 {!nameValid && (
-                                    <p className="text-xs text-synergy-red mt-1">
-                                        Full name must be at least 2 characters.
+                                    <p className="text-xs text-red-400">
+                                        Username must be at least 4 characters.
                                     </p>
                                 )}
-
-
-
                             </div>
                         )}
 
-                        <div>
-                            <label className="block text-white mb-2 text-sm">Email</label>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-200">Email</label>
                             <div className="relative">
-                                <Mail
-                                    className="absolute left-4 top-1/2 -translate-y-1/2 text-synergy-light-gray"
-                                    size={18}
-                                />
+                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                                 <input
-                                    type="text"
+                                    type="email"
                                     value={email}
-                                    onChange={(e) => {
-                                        setEmail(e.target.value);
-                                        setEmailValid(validateEmail(e.target.value));
-                                    }}
+                                    onChange={(e) => setEmail(e.target.value)}
                                     placeholder="you@university.edu"
-                                    className="w-full bg-synergy-dark-gray border border-synergy-gray rounded-lg pl-12 pr-4 py-3 text-white placeholder:text-synergy-light-gray focus:outline-none focus:border-primary transition-all"
-                                    aria-invalid={!emailValid}
-                                    title={
-                                        !emailValid
-                                            ? "Enter a valid email address with '@' and a domain."
-                                            : ""
-                                    }
+                                    className={`w-full rounded-xl border bg-white/5 py-3 pl-10 pr-4 text-white outline-none transition ${emailValid
+                                            ? "border-white/10 focus:border-emerald-400"
+                                            : "border-red-400 focus:border-red-400"
+                                        }`}
                                 />
-
                             </div>
-
                             {!emailValid && (
-                                <p className="text-xs text-synergy-red mt-1">
-                                    Please enter a valid email address.
-                                </p>
+                                <p className="text-xs text-red-400">Please enter a valid email address.</p>
                             )}
-
-
                         </div>
 
-                        <div>
-                            <label className="block text-white mb-2 text-sm">Password</label>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-200">Password</label>
                             <div className="relative">
-                                <Lock
-                                    className="absolute left-4 top-1/2 -translate-y-1/2 text-synergy-light-gray"
-                                    size={18}
-                                />
+                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                                 <input
                                     type="password"
                                     value={password}
                                     onChange={(e) => {
                                         setPassword(e.target.value);
-                                        validatePassword(e.target.value);
+                                        if (mode !== "login") {
+                                            validatePassword(e.target.value);
+                                        }
                                     }}
-                                    placeholder="••••••••"
-                                    required
-                                    className="w-full bg-synergy-dark-gray border border-synergy-gray rounded-lg pl-12 pr-4 py-3 text-white placeholder:text-synergy-light-gray focus:outline-none focus:border-primary transition-all"
+                                    placeholder="Enter your password"
+                                    className="w-full rounded-xl border border-white/10 bg-white/5 py-3 pl-10 pr-4 text-white outline-none transition focus:border-emerald-400"
                                 />
                             </div>
 
                             {mode !== "login" && (
-                                <div className="space-y-1 text-sm text-gray-400 pt-1">
+                                <div className="space-y-1 pt-1 text-sm text-gray-400">
                                     <div className="flex items-center gap-2">
                                         <input type="checkbox" checked={passwordCriteria.length} readOnly />
                                         <span>8+ characters</span>
@@ -219,27 +186,22 @@ export function AuthPage({ mode, onSubmit, onToggleMode, onBack, error }) {
                                     </div>
                                 </div>
                             )}
-
-
                         </div>
 
-
+                        {error && <p className="text-sm text-red-400">{error}</p>}
 
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="w-full bg-primary hover:bg-primary/90 text-white py-3.5 rounded-lg shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
+                            className="w-full rounded-xl bg-emerald-500 py-3 font-semibold text-white transition hover:bg-emerald-600 disabled:opacity-60"
                         >
-                            {isSubmitting
-                                ? "Please wait..."
-                                : mode === "login"
-                                    ? "Log In"
-                                    : "Create Account"}
+                            {isSubmitting ? "Please wait..." : mode === "login" ? "Log In" : "Sign Up"}
                         </button>
                     </form>
 
                     <div className="mt-6 text-center">
                         <button
+                            type="button"
                             onClick={onToggleMode}
                             className="text-synergy-light-gray hover:text-primary transition-all text-sm"
                         >
