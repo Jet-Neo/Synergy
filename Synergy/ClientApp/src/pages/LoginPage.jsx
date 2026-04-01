@@ -34,8 +34,24 @@ export function AuthPage({ mode, onSubmit, onToggleMode, onBack, error }) {
         setNameValid(true);
         setEmailValid(true);
 
-        const nameOk = validateName(name);
         const emailOk = validateEmail(email);
+
+        if (mode === "login") {
+            if (!emailOk || !password) {
+                if (!emailOk) setEmailValid(false);
+                setIsSubmitting(false);
+                return;
+            }
+
+            try {
+                await onSubmit(email, password);
+            } finally {
+                setIsSubmitting(false);
+            }
+            return;
+        }
+
+        const nameOk = validateName(name);
         const passOk = validatePassword(password);
 
         if (!nameOk) setNameValid(false);
@@ -100,8 +116,10 @@ export function AuthPage({ mode, onSubmit, onToggleMode, onBack, error }) {
                                         type="text"
                                         value={name}
                                         onChange={(e) => {
-                                            setName(e.target.value);
-                                            setNameValid(validateName(e.target.value));
+                                            setPassword(e.target.value);
+                                            if (mode !== "login") {
+                                                validatePassword(e.target.value);
+                                            }
                                         }}
                                         placeholder="Enter your full name"
                                         className="w-full bg-synergy-dark-gray border border-synergy-gray rounded-lg pl-12 pr-4 py-3 text-white placeholder:text-synergy-light-gray focus:outline-none focus:border-primary transition-all"
@@ -181,44 +199,26 @@ export function AuthPage({ mode, onSubmit, onToggleMode, onBack, error }) {
                                 />
                             </div>
 
-                            <div className="mt-3 space-y-1">
-                                <label className="flex items-center">
-                                    <input
-                                        type="checkbox"
-                                        checked={passwordCriteria.length}
-                                        className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2 mr-2"
-                                        readOnly
-                                    />
-                                    <span className="text-xs text-synergy-light-gray">8+ characters</span>
-                                </label>
-                                <label className="flex items-center">
-                                    <input
-                                        type="checkbox"
-                                        checked={passwordCriteria.special}
-                                        className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2 mr-2"
-                                        readOnly
-                                    />
-                                    <span className="text-xs text-synergy-light-gray">1+ special char</span>
-                                </label>
-                                <label className="flex items-center">
-                                    <input
-                                        type="checkbox"
-                                        checked={passwordCriteria.number}
-                                        className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2 mr-2"
-                                        readOnly
-                                    />
-                                    <span className="text-xs text-synergy-light-gray">1+ number</span>
-                                </label>
-                                <label className="flex items-center">
-                                    <input
-                                        type="checkbox"
-                                        checked={passwordCriteria.capital}
-                                        className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2 mr-2"
-                                        readOnly
-                                    />
-                                    <span className="text-xs text-synergy-light-gray">1+ capital letter</span>
-                                </label>
-                            </div>
+                            {mode !== "login" && (
+                                <div className="space-y-1 text-sm text-gray-400 pt-1">
+                                    <div className="flex items-center gap-2">
+                                        <input type="checkbox" checked={passwordCriteria.length} readOnly />
+                                        <span>8+ characters</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <input type="checkbox" checked={passwordCriteria.special} readOnly />
+                                        <span>1+ special char</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <input type="checkbox" checked={passwordCriteria.number} readOnly />
+                                        <span>1+ number</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <input type="checkbox" checked={passwordCriteria.capital} readOnly />
+                                        <span>1+ capital letter</span>
+                                    </div>
+                                </div>
+                            )}
 
 
                         </div>
