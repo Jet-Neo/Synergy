@@ -42,5 +42,25 @@ namespace Synergy.Controllers
 
             return CreatedAtAction(nameof(GetUser), new { id = user.Id }, user);
         }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateUser(int id, User updatedUser)
+        {
+            if (id != updatedUser.Id)
+                return BadRequest();
+
+            var existingUser = await _context.Users.FindAsync(id);
+            if (existingUser == null)
+                return NotFound();
+
+            existingUser.Name = updatedUser.Name;
+            existingUser.Email = updatedUser.Email;
+            existingUser.Role = updatedUser.Role;
+            existingUser.PasswordHash = updatedUser.PasswordHash;
+
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
     }
 }

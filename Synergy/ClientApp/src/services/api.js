@@ -48,6 +48,18 @@ export const tasks = {
         }
 
         return res.status === 204 ? null : await res.json();
+    },
+
+    remove: async (id) => {
+        const res = await fetch(`${API_BASE}/tasks/${id}`, {
+            method: "DELETE",
+        });
+
+        if (!res.ok) {
+            throw new Error("Failed to delete task");
+        }
+
+        return true;
     }
 };
 
@@ -88,6 +100,34 @@ export const teams = {
         }
 
         return await res.json();
+    },
+
+    update: async (id, teamData) => {
+        const res = await fetch(`${API_BASE}/teams/${id}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(teamData),
+        });
+
+        if (!res.ok) {
+            throw new Error("Failed to update team");
+        }
+
+        return res.status === 204 ? null : await res.json();
+    },
+
+    remove: async (id) => {
+        const res = await fetch(`${API_BASE}/teams/${id}`, {
+            method: "DELETE",
+        });
+
+        if (!res.ok) {
+            throw new Error("Failed to delete team");
+        }
+
+        return true;
     }
 };
 
@@ -108,6 +148,22 @@ export const users = {
         }
 
         return await res.json();
+    },
+
+    update: async (id, userData) => {
+        const res = await fetch(`${API_BASE}/users/${id}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(userData),
+        });
+
+        if (!res.ok) {
+            throw new Error("Failed to update user");
+        }
+
+        return res.status === 204 ? null : await res.json();
     }
 };
 

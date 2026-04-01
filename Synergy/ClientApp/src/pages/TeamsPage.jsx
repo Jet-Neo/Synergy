@@ -1,5 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
-import { Users, Mail, UserPlus, FolderPlus, X, UserMinus } from "lucide-react";
+import {
+    Users,
+    Mail,
+    UserPlus,
+    FolderPlus,
+    X,
+    UserMinus,
+    Pencil,
+    Trash2,
+} from "lucide-react";
 import {
     teams as teamsAPI,
     users as usersAPI,
@@ -13,6 +22,22 @@ export default function TeamsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [activePanel, setActivePanel] = useState("");
     const [selectedTeam, setSelectedTeam] = useState(null);
+
+    const [isEditingTeam, setIsEditingTeam] = useState(false);
+    const [editTeamForm, setEditTeamForm] = useState({
+        id: "",
+        name: "",
+        description: "",
+    });
+
+    const [editingUserId, setEditingUserId] = useState(null);
+    const [editUserForm, setEditUserForm] = useState({
+        id: "",
+        name: "",
+        email: "",
+        role: "Member",
+        passwordHash: "TEMP_PLACEHOLDER",
+    });
 
     const [teamForm, setTeamForm] = useState({
         name: "",
@@ -133,38 +158,104 @@ export default function TeamsPage() {
         }
     };
 
+    const startEditingTeam = () => {
+        if (!selectedTeam) return;
+
+        setEditTeamForm({
+            id: selectedTeam.id,
+            name: selectedTeam.name,
+            description: selectedTeam.description || "",
+        });
+
+        setIsEditingTeam(true);
+    };
+
+    const handleUpdateTeam = async (e) => {
+        e.preventDefault();
+
+        try {
+            await teamsAPI.update(editTeamForm.id, {
+                id: editTeamForm.id,
+                name: editTeamForm.name,
+                description: editTeamForm.description,
+            });
+
+            await loadData();
+
+            setSelectedTeam((prev) =>
+                prev
+                    ? {
+                        ...prev,
+                        name: editTeamForm.name,
+                        description: editTeamForm.description,
+                    }
+                    : null
+            );
+
+            setIsEditingTeam(false);
+        } catch (error) {
+            console.error("Failed to update team:", error);
+            alert("Failed to update team. Please try again.");
+        }
+    };
+
+    const handleDeleteTeam = async () => {
+        if (!selectedTeam) return;
+
+        const confirmed = window.confirm(
+            `Are you sure you want to delete "${selectedTeam.name}"?`
+        );
+        if (!confirmed) return;
+
+        try {
+            await teamsAPI.remove(selectedTeam.id);
+            setSelectedTeam(null);
+            setIsEditingTeam(false);
+            await loadData();
+        } catch (error) {
+            console.error("Failed to delete team:", error);
+            alert("Failed to delete team.");
+        }
+    };
+
     const handleRemoveMember = async (teamMemberId) => {
         try {
             await teamMembersAPI.remove(teamMemberId);
             await loadData();
 
-            if (selectedTeam) {
-                const refreshedTeam = teams
-                    .map((team) => {
-                        const members = teamMembers
-                            .filter((tm) => tm.teamId === team.id)
-                            .map((tm) => ({
-                                id: tm.id,
-                                userId: tm.userId,
-                                name: tm.user?.name || "Unknown User",
-                                email: tm.user?.email || "",
-                                role: tm.user?.role || "Member",
-                            }));
+            setSelectedTeam((prev) => {
+                if (!prev) return null;
 
-                        return {
-                            ...team,
-                            members,
-                        };
-                    })
-                    .find((team) => team.id === selectedTeam.id);
-
-                if (refreshedTeam) {
-                    setSelectedTeam(refreshedTeam);
-                }
-            }
+                const refreshed = teamsWithMembers.find((t) => t.id === prev.id);
+                return refreshed || null;
+            });
         } catch (error) {
             console.error("Failed to remove member:", error);
             alert("Failed to remove member from team.");
+        }
+    };
+
+    const startEditingUser = (member) => {
+        setEditingUserId(member.id);
+        setEditUserForm({
+            id: member.id,
+            name: member.name,
+            email: member.email,
+            role: member.role,
+            passwordHash: "TEMP_PLACEHOLDER",
+        });
+    };
+
+    const handleUpdateUser = async (e) => {
+        e.preventDefault();
+
+        try {
+            await usersAPI.update(editUserForm.id, editUserForm);
+            setEditingUserId(null);
+            await loadData();
+        } catch (error) {
+            console.error("Failed to update user:", error);
+            alert("Failed to update user. Please try again.");
         }
     };
 
@@ -479,58 +570,60 @@ export default function TeamsPage() {
                         Loading teams...
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-                        {teamsWithMembers.map((team) => (
-                            <button
-                                key={team.id}
-                                type="button"
-                                onClick={() => setSelectedTeam(team)}
-                                className="text-left bg-synergy-charcoal border border-primary/20 rounded-2xl p-6 shadow-lg shadow-black/20 hover:border-primary/30 transition-all h-full flex flex-col justify-between"
-                            >
-                                <div>
-                                    <div className="flex items-start justify-between mb-4 gap-3">
-                                        <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center shrink-0">
-                                            <Users className="text-primary" size={24} />
+                    <div className="overflow-x-auto pb-2">
+                        <div className="flex gap-6 min-w-max">
+                            {teamsWithMembers.map((team) => (
+                                <button
+                                    key={team.id}
+                                    type="button"
+                                    onClick={() => setSelectedTeam(team)}
+                                    className="text-left w-[320px] bg-synergy-charcoal border border-primary/20 rounded-2xl p-6 shadow-lg shadow-black/20 hover:border-primary/30 transition-all flex flex-col justify-between"
+                                >
+                                    <div>
+                                        <div className="flex items-start justify-between mb-4 gap-3">
+                                            <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center shrink-0">
+                                                <Users className="text-primary" size={24} />
+                                            </div>
+
+                                            <div className="px-3 py-1 bg-synergy-blue/10 text-synergy-blue rounded-lg text-sm whitespace-nowrap">
+                                                {team.members.length} members
+                                            </div>
                                         </div>
 
-                                        <div className="px-3 py-1 bg-synergy-blue/10 text-synergy-blue rounded-lg text-sm whitespace-nowrap">
-                                            {team.members.length} members
+                                        <h3 className="text-white text-xl mb-2 font-semibold">
+                                            {team.name}
+                                        </h3>
+
+                                        <p className="text-sm text-synergy-light-gray mb-5 min-h-[44px]">
+                                            {team.description || "No description provided"}
+                                        </p>
+                                    </div>
+
+                                    <div className="pt-4 border-t border-synergy-dark-gray">
+                                        <div className="flex -space-x-2">
+                                            {team.members.slice(0, 4).map((member, index) => (
+                                                <div
+                                                    key={index}
+                                                    className="w-9 h-9 bg-primary/20 border-2 border-synergy-charcoal rounded-full flex items-center justify-center text-primary text-xs font-semibold"
+                                                    title={member.name}
+                                                >
+                                                    {member.name
+                                                        .split(" ")
+                                                        .map((n) => n[0])
+                                                        .join("")}
+                                                </div>
+                                            ))}
+
+                                            {team.members.length > 4 && (
+                                                <div className="w-9 h-9 bg-synergy-dark-gray border-2 border-synergy-charcoal rounded-full flex items-center justify-center text-synergy-light-gray text-xs">
+                                                    +{team.members.length - 4}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
-
-                                    <h3 className="text-white text-xl mb-2 font-semibold">
-                                        {team.name}
-                                    </h3>
-
-                                    <p className="text-sm text-synergy-light-gray mb-5 min-h-[44px]">
-                                        {team.description || "No description provided"}
-                                    </p>
-                                </div>
-
-                                <div className="pt-4 border-t border-synergy-dark-gray">
-                                    <div className="flex -space-x-2">
-                                        {team.members.slice(0, 4).map((member, index) => (
-                                            <div
-                                                key={index}
-                                                className="w-9 h-9 bg-primary/20 border-2 border-synergy-charcoal rounded-full flex items-center justify-center text-primary text-xs font-semibold"
-                                                title={member.name}
-                                            >
-                                                {member.name
-                                                    .split(" ")
-                                                    .map((n) => n[0])
-                                                    .join("")}
-                                            </div>
-                                        ))}
-
-                                        {team.members.length > 4 && (
-                                            <div className="w-9 h-9 bg-synergy-dark-gray border-2 border-synergy-charcoal rounded-full flex items-center justify-center text-synergy-light-gray text-xs">
-                                                +{team.members.length - 4}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            </button>
-                        ))}
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 )}
             </div>
@@ -542,39 +635,119 @@ export default function TeamsPage() {
                     {allMembers.map((member) => (
                         <div
                             key={member.id}
-                            className="bg-synergy-charcoal border border-synergy-dark-gray rounded-xl px-5 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4 hover:bg-synergy-dark-gray/20 hover:border-primary/30 transition-all"
+                            className="bg-synergy-charcoal border border-synergy-dark-gray rounded-xl px-5 py-4 flex flex-col gap-4 hover:bg-synergy-dark-gray/20 hover:border-primary/30 transition-all"
                         >
-                            <div className="flex items-center gap-4 min-w-0">
-                                <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center shrink-0">
-                                    <span className="text-primary font-semibold">
-                                        {member.name
-                                            .split(" ")
-                                            .map((n) => n[0])
-                                            .join("")}
-                                    </span>
-                                </div>
+                            {editingUserId === member.id ? (
+                                <form onSubmit={handleUpdateUser} className="space-y-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <input
+                                            type="text"
+                                            value={editUserForm.name}
+                                            onChange={(e) =>
+                                                setEditUserForm({
+                                                    ...editUserForm,
+                                                    name: e.target.value,
+                                                })
+                                            }
+                                            className={inputClass}
+                                            placeholder="Full Name"
+                                            required
+                                        />
 
-                                <div className="min-w-0">
-                                    <div className="text-white mb-1 font-medium">
-                                        {member.name}
+                                        <input
+                                            type="email"
+                                            value={editUserForm.email}
+                                            onChange={(e) =>
+                                                setEditUserForm({
+                                                    ...editUserForm,
+                                                    email: e.target.value,
+                                                })
+                                            }
+                                            className={inputClass}
+                                            placeholder="Email"
+                                            required
+                                        />
+
+                                        <select
+                                            value={editUserForm.role}
+                                            onChange={(e) =>
+                                                setEditUserForm({
+                                                    ...editUserForm,
+                                                    role: e.target.value,
+                                                })
+                                            }
+                                            className={inputClass}
+                                        >
+                                            <option value="Member">Member</option>
+                                            <option value="Developer">Developer</option>
+                                            <option value="Designer">Designer</option>
+                                            <option value="Team Lead">Team Lead</option>
+                                        </select>
                                     </div>
 
-                                    <div className="flex items-center gap-3 text-sm text-synergy-light-gray flex-wrap">
-                                        <div className="flex items-center gap-1.5 min-w-0">
-                                            <Mail size={14} />
-                                            <span className="truncate">{member.email}</span>
+                                    <div className="flex gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => setEditingUserId(null)}
+                                            className="px-4 py-2 rounded-lg bg-synergy-dark-gray hover:bg-synergy-gray text-white transition-all"
+                                        >
+                                            Cancel
+                                        </button>
+
+                                        <button
+                                            type="submit"
+                                            className="px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-white transition-all font-semibold"
+                                        >
+                                            Save
+                                        </button>
+                                    </div>
+                                </form>
+                            ) : (
+                                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                                    <div className="flex items-center gap-4 min-w-0">
+                                        <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center shrink-0">
+                                            <span className="text-primary font-semibold">
+                                                {member.name
+                                                    .split(" ")
+                                                    .map((n) => n[0])
+                                                    .join("")}
+                                            </span>
                                         </div>
-                                        <div>•</div>
-                                        <div>{member.role}</div>
-                                        <div>•</div>
-                                        <div>{member.teams} teams</div>
+
+                                        <div className="min-w-0">
+                                            <div className="text-white mb-1 font-medium">
+                                                {member.name}
+                                            </div>
+
+                                            <div className="flex items-center gap-3 text-sm text-synergy-light-gray flex-wrap">
+                                                <div className="flex items-center gap-1.5 min-w-0">
+                                                    <Mail size={14} />
+                                                    <span className="truncate">{member.email}</span>
+                                                </div>
+                                                <div>|</div>
+                                                <div>{member.role}</div>
+                                                <div>|</div>
+                                                <div>{member.teams} teams</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <div className="px-3 py-1.5 rounded-lg text-sm bg-primary/10 text-primary">
+                                            Active
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => startEditingUser(member)}
+                                            className="p-2 rounded-lg bg-synergy-dark-gray hover:bg-synergy-gray text-white transition-all"
+                                            title="Edit user"
+                                        >
+                                            <Pencil size={16} />
+                                        </button>
                                     </div>
                                 </div>
-                            </div>
-
-                            <div className="px-3 py-1.5 rounded-lg text-sm bg-primary/10 text-primary self-start md:self-auto">
-                                Active
-                            </div>
+                            )}
                         </div>
                     ))}
                 </div>
@@ -593,14 +766,97 @@ export default function TeamsPage() {
                                 </p>
                             </div>
 
-                            <button
-                                type="button"
-                                onClick={() => setSelectedTeam(null)}
-                                className="p-2 rounded-lg bg-synergy-dark-gray hover:bg-synergy-gray text-white transition-all"
-                            >
-                                <X size={18} />
-                            </button>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={startEditingTeam}
+                                    className="px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-white transition-all font-medium"
+                                >
+                                    Edit Team
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={handleDeleteTeam}
+                                    className="px-4 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-all font-medium"
+                                >
+                                    Delete Team
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setSelectedTeam(null);
+                                        setIsEditingTeam(false);
+                                    }}
+                                    className="p-2 rounded-lg bg-synergy-dark-gray hover:bg-synergy-gray text-white transition-all"
+                                >
+                                    <X size={18} />
+                                </button>
+                            </div>
                         </div>
+
+                        {isEditingTeam && (
+                            <div className="mb-6 bg-synergy-dark-gray/40 border border-primary/20 rounded-xl p-5">
+                                <h4 className="text-white text-lg font-semibold mb-4">
+                                    Edit Team
+                                </h4>
+
+                                <form onSubmit={handleUpdateTeam} className="space-y-4">
+                                    <div>
+                                        <label className="block text-white mb-2 text-sm">
+                                            Team Name
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={editTeamForm.name}
+                                            onChange={(e) =>
+                                                setEditTeamForm({
+                                                    ...editTeamForm,
+                                                    name: e.target.value,
+                                                })
+                                            }
+                                            className={inputClass}
+                                            required
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-white mb-2 text-sm">
+                                            Description
+                                        </label>
+                                        <textarea
+                                            value={editTeamForm.description}
+                                            onChange={(e) =>
+                                                setEditTeamForm({
+                                                    ...editTeamForm,
+                                                    description: e.target.value,
+                                                })
+                                            }
+                                            className={`${inputClass} resize-none`}
+                                            rows={3}
+                                        />
+                                    </div>
+
+                                    <div className="flex gap-3 pt-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsEditingTeam(false)}
+                                            className="px-5 py-3 rounded-lg bg-synergy-dark-gray hover:bg-synergy-gray text-white transition-all"
+                                        >
+                                            Cancel
+                                        </button>
+
+                                        <button
+                                            type="submit"
+                                            className="px-5 py-3 rounded-lg bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all font-semibold"
+                                        >
+                                            Save Changes
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        )}
 
                         <div className="mb-5 flex items-center justify-between">
                             <h4 className="text-white text-lg font-semibold">

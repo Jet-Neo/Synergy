@@ -1,11 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Clock, Calendar, Plus, TrendingUp } from "lucide-react";
-import { workLogs as workLogsAPI, tasks as tasksAPI } from "../services/api";
+import {
+    workLogs as workLogsAPI,
+    tasks as tasksAPI,
+    users as usersAPI,
+    teamMembers as teamMembersAPI,
+} from "../services/api";
 
 export default function WorkLogsPage() {
     const [formData, setFormData] = useState({
         taskId: "",
-        userName: "",
+        userId: "",
         description: "",
         logDate: new Date().toISOString().split("T")[0],
         hoursWorked: "",
@@ -14,6 +19,8 @@ export default function WorkLogsPage() {
 
     const [workLogs, setWorkLogs] = useState([]);
     const [tasks, setTasks] = useState([]);
+    const [users, setUsers] = useState([]);
+    const [teamMembers, setTeamMembers] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedDate, setSelectedDate] = useState("");
 
@@ -27,9 +34,11 @@ export default function WorkLogsPage() {
         try {
             setIsLoading(true);
 
-            const [workLogsRes, tasksRes] = await Promise.all([
+            const [workLogsRes, tasksRes, usersRes, teamMembersRes] = await Promise.all([
                 workLogsAPI.getAll(),
                 tasksAPI.getAll(),
+                usersAPI.getAll(),
+                teamMembersAPI.getAll(),
             ]);
 
             const mappedLogs = (workLogsRes || [])
@@ -42,13 +51,17 @@ export default function WorkLogsPage() {
                     member: log.user?.name || log.userName || "Unknown User",
                     description: log.description || "",
                 }))
-                .sort((a, b) => new Date(b.date) - new Date(a.date));
+                .sort((a, b) => {
+                    const dateDiff = new Date(b.date) - new Date(a.date);
+                    if (dateDiff !== 0) return dateDiff;
+                    return b.id - a.id;
+                });
 
             const mappedTasks = (tasksRes || []).map((task) => ({
                 id: task.id,
                 title: task.title,
                 description: task.description,
-                status: task.status,
+                status: (task.status || "").toLowerCase(),
                 priority: task.priority,
                 dueDate: task.dueDate,
                 assigneeName: task.assigneeName,
@@ -58,32 +71,76 @@ export default function WorkLogsPage() {
 
             setWorkLogs(mappedLogs);
             setTasks(mappedTasks);
+            setUsers(usersRes || []);
+            setTeamMembers(teamMembersRes || []);
         } catch (error) {
             console.error("Failed to load data:", error);
             setWorkLogs([]);
             setTasks([]);
+            setUsers([]);
+            setTeamMembers([]);
         } finally {
             setIsLoading(false);
         }
     };
 
+    const availableTasks = useMemo(() => {
+        return tasks.filter((task) => task.status !== "completed");
+    }, [tasks]);
+
+    const selectedTask = useMemo(() => {
+        return tasks.find((task) => String(task.id) === String(formData.taskId)) || null;
+    }, [tasks, formData.taskId]);
+
+    const allowedUserIdsForSelectedTask = useMemo(() => {
+        if (!selectedTask?.teamId) return [];
+        return teamMembers
+            .filter((tm) => tm.teamId === selectedTask.teamId)
+            .map((tm) => tm.userId);
+    }, [teamMembers, selectedTask]);
+
+    const availableUsersForSelectedTask = useMemo(() => {
+        if (!selectedTask?.teamId) return [];
+        return users.filter((user) => allowedUserIdsForSelectedTask.includes(user.id));
+    }, [users, allowedUserIdsForSelectedTask, selectedTask]);
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        const selectedTask = tasks.find(
+        const selectedTaskData = tasks.find(
             (task) => task.id === Number(formData.taskId)
         );
 
-        if (!selectedTask) {
+        const selectedUser = users.find(
+            (user) => user.id === Number(formData.userId)
+        );
+
+        if (!selectedTaskData) {
             alert("Please select a valid task.");
+            return;
+        }
+
+        if ((selectedTaskData.status || "").toLowerCase() === "completed") {
+            alert("Completed tasks cannot be selected for new work logs.");
+            return;
+        }
+
+        if (!selectedUser) {
+            alert("Please select a valid user.");
+            return;
+        }
+
+        const userAllowed = allowedUserIdsForSelectedTask.includes(selectedUser.id);
+        if (!userAllowed) {
+            alert("Only members of the task's team can log work for this task.");
             return;
         }
 
         try {
             await workLogsAPI.create({
                 taskId: Number(formData.taskId),
-                userId: null,
-                userName: formData.userName,
+                userId: Number(formData.userId),
+                userName: selectedUser.name,
                 description: formData.description,
                 logDate: formData.logDate
                     ? new Date(formData.logDate).toISOString()
@@ -92,22 +149,22 @@ export default function WorkLogsPage() {
             });
 
             if (formData.status) {
-                await tasksAPI.update(selectedTask.id, {
-                    id: selectedTask.id,
-                    title: selectedTask.title,
-                    description: selectedTask.description || "",
+                await tasksAPI.update(selectedTaskData.id, {
+                    id: selectedTaskData.id,
+                    title: selectedTaskData.title,
+                    description: selectedTaskData.description || "",
                     status: formData.status,
-                    priority: selectedTask.priority || "Medium",
-                    dueDate: selectedTask.dueDate,
-                    assignedToUserId: selectedTask.assignedToUserId,
-                    assigneeName: selectedTask.assigneeName,
-                    teamId: selectedTask.teamId,
+                    priority: selectedTaskData.priority || "Medium",
+                    dueDate: selectedTaskData.dueDate,
+                    assignedToUserId: selectedTaskData.assignedToUserId,
+                    assigneeName: selectedTaskData.assigneeName,
+                    teamId: selectedTaskData.teamId,
                 });
             }
 
             setFormData({
                 taskId: "",
-                userName: "",
+                userId: "",
                 description: "",
                 logDate: new Date().toISOString().split("T")[0],
                 hoursWorked: "",
@@ -131,7 +188,11 @@ export default function WorkLogsPage() {
             });
         }
 
-        return logs.sort((a, b) => new Date(b.date) - new Date(a.date));
+        return logs.sort((a, b) => {
+            const dateDiff = new Date(b.date) - new Date(a.date);
+            if (dateDiff !== 0) return dateDiff;
+            return b.id - a.id;
+        });
     }, [workLogs, selectedDate]);
 
     const sevenDaysAgo = new Date();
@@ -236,13 +297,17 @@ export default function WorkLogsPage() {
                                 <select
                                     value={formData.taskId}
                                     onChange={(e) =>
-                                        setFormData({ ...formData, taskId: e.target.value })
+                                        setFormData({
+                                            ...formData,
+                                            taskId: e.target.value,
+                                            userId: "",
+                                        })
                                     }
                                     className={inputClass}
                                     required
                                 >
                                     <option value="">Choose a task...</option>
-                                    {tasks.map((task) => (
+                                    {availableTasks.map((task) => (
                                         <option key={task.id} value={task.id}>
                                             {task.title}
                                         </option>
@@ -254,16 +319,26 @@ export default function WorkLogsPage() {
                                 <label className="block text-white mb-2 text-sm">
                                     Team Member
                                 </label>
-                                <input
-                                    type="text"
-                                    value={formData.userName}
+                                <select
+                                    value={formData.userId}
                                     onChange={(e) =>
-                                        setFormData({ ...formData, userName: e.target.value })
+                                        setFormData({ ...formData, userId: e.target.value })
                                     }
                                     className={inputClass}
-                                    placeholder="Enter team member name"
                                     required
-                                />
+                                    disabled={!formData.taskId}
+                                >
+                                    <option value="">
+                                        {formData.taskId
+                                            ? "Choose a user..."
+                                            : "Select a task first"}
+                                    </option>
+                                    {availableUsersForSelectedTask.map((user) => (
+                                        <option key={user.id} value={user.id}>
+                                            {user.name}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
 
                             <div>

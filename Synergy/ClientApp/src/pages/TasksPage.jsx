@@ -1,58 +1,105 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
     Plus,
     Calendar,
     User,
+    Users,
     CheckCircle2,
     Clock,
     AlertCircle,
+    Trash2,
+    Pencil,
+    ArrowUp,
+    ArrowDown,
 } from "lucide-react";
-import { tasks as tasksAPI } from "../services/api";
+import {
+    tasks as tasksAPI,
+    users as usersAPI,
+    teams as teamsAPI,
+    teamMembers as teamMembersAPI,
+} from "../services/api";
 
 export default function TasksPage() {
     const [showModal, setShowModal] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({
+        id: "",
         title: "",
         description: "",
         deadline: "",
-        assignee: "",
+        assigneeId: "",
+        teamId: "",
         priority: "medium",
+        status: "pending",
     });
     const [tasks, setTasks] = useState([]);
+    const [users, setUsers] = useState([]);
+    const [teams, setTeams] = useState([]);
+    const [teamMembers, setTeamMembers] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [sortConfig, setSortConfig] = useState({
+        key: null,
+        direction: "asc",
+    });
 
-    const loadTasks = async () => {
+    const loadData = async () => {
         try {
             setIsLoading(true);
-            const response = await tasksAPI.getAll();
 
-            const mappedTasks = (response || []).map((task) => ({
+            const [tasksResponse, usersResponse, teamsResponse, teamMembersResponse] =
+                await Promise.all([
+                    tasksAPI.getAll(),
+                    usersAPI.getAll(),
+                    teamsAPI.getAll(),
+                    teamMembersAPI.getAll(),
+                ]);
+
+            const mappedTasks = (tasksResponse || []).map((task) => ({
                 id: task.id,
                 title: task.title,
-                description: task.description,
+                description: task.description || "",
                 deadline: task.dueDate,
                 assignee:
                     task.assignedToUser?.name ||
                     task.assigneeName ||
                     "Unassigned",
+                assigneeId: task.assignedToUserId || "",
+                team: task.team?.name || "No Team",
+                teamId: task.teamId || "",
                 priority: (task.priority || "medium").toLowerCase(),
-                status: (task.status || "pending")
-                    .toLowerCase()
-                    .replace(" ", "-"),
+                status: (task.status || "pending").toLowerCase().replace(" ", "-"),
             }));
 
             setTasks(mappedTasks);
+            setUsers(usersResponse || []);
+            setTeams(teamsResponse || []);
+            setTeamMembers(teamMembersResponse || []);
         } catch (error) {
-            console.error("Failed to load tasks:", error);
+            console.error("Failed to load tasks/users/teams:", error);
             setTasks([]);
+            setUsers([]);
+            setTeams([]);
+            setTeamMembers([]);
         } finally {
             setIsLoading(false);
         }
     };
 
     useEffect(() => {
-        loadTasks();
+        loadData();
     }, []);
+
+    const teamUserIds = useMemo(() => {
+        if (!formData.teamId) return [];
+        return teamMembers
+            .filter((tm) => String(tm.teamId) === String(formData.teamId))
+            .map((tm) => tm.userId);
+    }, [teamMembers, formData.teamId]);
+
+    const filteredAssignableUsers = useMemo(() => {
+        if (!formData.teamId) return [];
+        return users.filter((user) => teamUserIds.includes(user.id));
+    }, [users, teamUserIds, formData.teamId]);
 
     const getStatusBadge = (status) => {
         const normalized = status?.toLowerCase();
@@ -77,10 +124,103 @@ export default function TasksPage() {
         return <CheckCircle2 className="text-synergy-light-gray" size={16} />;
     };
 
+    const priorityRank = {
+        high: 3,
+        medium: 2,
+        low: 1,
+    };
+
+    const statusRank = {
+        completed: 3,
+        "in-progress": 2,
+        pending: 1,
+    };
+
+    const sortedTasks = useMemo(() => {
+        const sorted = [...tasks];
+
+        if (!sortConfig.key) return sorted;
+
+        sorted.sort((a, b) => {
+            let aValue = a[sortConfig.key];
+            let bValue = b[sortConfig.key];
+
+            if (sortConfig.key === "priority") {
+                aValue = priorityRank[a.priority] || 0;
+                bValue = priorityRank[b.priority] || 0;
+            }
+
+            if (sortConfig.key === "deadline") {
+                aValue = a.deadline ? new Date(a.deadline).getTime() : 0;
+                bValue = b.deadline ? new Date(b.deadline).getTime() : 0;
+            }
+
+            if (sortConfig.key === "status") {
+                aValue = statusRank[a.status] || 0;
+                bValue = statusRank[b.status] || 0;
+            }
+
+            if (aValue < bValue) {
+                return sortConfig.direction === "asc" ? -1 : 1;
+            }
+            if (aValue > bValue) {
+                return sortConfig.direction === "asc" ? 1 : -1;
+            }
+            return 0;
+        });
+
+        return sorted;
+    }, [tasks, sortConfig]);
+
+    const requestSort = (key) => {
+        setSortConfig((current) => {
+            if (current.key === key) {
+                return {
+                    key,
+                    direction: current.direction === "asc" ? "desc" : "asc",
+                };
+            }
+
+            return {
+                key,
+                direction: "asc",
+            };
+        });
+    };
+
+    const getSortIcon = (key) => {
+        if (sortConfig.key !== key) return null;
+        return sortConfig.direction === "asc" ? (
+            <ArrowUp size={14} className="text-primary" />
+        ) : (
+            <ArrowDown size={14} className="text-primary" />
+        );
+    };
+
+    const resetForm = () => {
+        setFormData({
+            id: "",
+            title: "",
+            description: "",
+            deadline: "",
+            assigneeId: "",
+            teamId: "",
+            priority: "medium",
+            status: "pending",
+        });
+        setIsEditing(false);
+        setShowModal(false);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        const selectedUser = users.find(
+            (user) => user.id === Number(formData.assigneeId)
+        );
+
         const payload = {
+            id: formData.id ? Number(formData.id) : 0,
             title: formData.title,
             description: formData.description,
             dueDate: formData.deadline
@@ -89,32 +229,64 @@ export default function TasksPage() {
             priority:
                 formData.priority.charAt(0).toUpperCase() +
                 formData.priority.slice(1),
-            status: "Pending",
-            assignedToUserId: null,
-            assigneeName: formData.assignee,
-            teamId: null,
+            status:
+                formData.status === "in-progress"
+                    ? "In Progress"
+                    : formData.status.charAt(0).toUpperCase() +
+                    formData.status.slice(1),
+            assignedToUserId: formData.assigneeId
+                ? Number(formData.assigneeId)
+                : null,
+            assigneeName: selectedUser?.name || "",
+            teamId: formData.teamId ? Number(formData.teamId) : null,
         };
 
         try {
-            await tasksAPI.create(payload);
+            if (isEditing) {
+                await tasksAPI.update(formData.id, payload);
+            } else {
+                await tasksAPI.create(payload);
+            }
 
-            setShowModal(false);
-            setFormData({
-                title: "",
-                description: "",
-                deadline: "",
-                assignee: "",
-                priority: "medium",
-            });
-
-            await loadTasks();
+            resetForm();
+            await loadData();
         } catch (error) {
-            console.error("Failed to create task:", error);
-            alert("Failed to create task. Please try again.");
+            console.error("Failed to save task:", error);
+            alert("Failed to save task. Please try again.");
         }
     };
 
-    const displayTasks = tasks;
+    const handleEditTask = (task) => {
+        setFormData({
+            id: task.id,
+            title: task.title,
+            description: task.description,
+            deadline: task.deadline
+                ? new Date(task.deadline).toISOString().split("T")[0]
+                : "",
+            assigneeId: task.assigneeId ? String(task.assigneeId) : "",
+            teamId: task.teamId ? String(task.teamId) : "",
+            priority: task.priority,
+            status: task.status,
+        });
+        setIsEditing(true);
+        setShowModal(true);
+    };
+
+    const handleDeleteTask = async (taskId, taskTitle) => {
+        const confirmed = window.confirm(
+            `Are you sure you want to delete "${taskTitle}"?`
+        );
+        if (!confirmed) return;
+
+        try {
+            await tasksAPI.remove(taskId);
+            await loadData();
+        } catch (error) {
+            console.error("Failed to delete task:", error);
+            alert("Failed to delete task.");
+        }
+    };
 
     return (
         <div className="p-8 space-y-6">
@@ -129,7 +301,10 @@ export default function TasksPage() {
                 </div>
 
                 <button
-                    onClick={() => setShowModal(true)}
+                    onClick={() => {
+                        setIsEditing(false);
+                        setShowModal(true);
+                    }}
                     className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-lg shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all font-semibold"
                 >
                     <Plus size={20} />
@@ -141,21 +316,21 @@ export default function TasksPage() {
                 <div className="bg-synergy-charcoal border border-primary/20 rounded-xl p-6 shadow-lg shadow-black/30 hover:border-primary/40 transition-all">
                     <div className="text-synergy-light-gray mb-2">Total Tasks</div>
                     <div className="text-3xl text-white font-bold">
-                        {displayTasks.length}
+                        {tasks.length}
                     </div>
                 </div>
 
                 <div className="bg-synergy-charcoal border border-primary/20 rounded-xl p-6 shadow-lg shadow-black/30 hover:border-primary/40 transition-all">
                     <div className="text-synergy-light-gray mb-2">In Progress</div>
                     <div className="text-3xl text-blue-400 font-bold">
-                        {displayTasks.filter((t) => t.status === "in-progress").length}
+                        {tasks.filter((t) => t.status === "in-progress").length}
                     </div>
                 </div>
 
                 <div className="bg-synergy-charcoal border border-primary/20 rounded-xl p-6 shadow-lg shadow-black/30 hover:border-primary/40 transition-all">
                     <div className="text-synergy-light-gray mb-2">Completed</div>
                     <div className="text-3xl text-primary font-bold">
-                        {displayTasks.filter((t) => t.status === "completed").length}
+                        {tasks.filter((t) => t.status === "completed").length}
                     </div>
                 </div>
             </div>
@@ -172,13 +347,40 @@ export default function TasksPage() {
                                     Assignee
                                 </th>
                                 <th className="text-left px-6 py-4 text-synergy-light-gray font-semibold">
-                                    Deadline
+                                    Team
                                 </th>
                                 <th className="text-left px-6 py-4 text-synergy-light-gray font-semibold">
-                                    Priority
+                                    <button
+                                        type="button"
+                                        onClick={() => requestSort("deadline")}
+                                        className="flex items-center gap-2 hover:text-white transition-all"
+                                    >
+                                        Deadline
+                                        {getSortIcon("deadline")}
+                                    </button>
                                 </th>
                                 <th className="text-left px-6 py-4 text-synergy-light-gray font-semibold">
-                                    Status
+                                    <button
+                                        type="button"
+                                        onClick={() => requestSort("priority")}
+                                        className="flex items-center gap-2 hover:text-white transition-all"
+                                    >
+                                        Priority
+                                        {getSortIcon("priority")}
+                                    </button>
+                                </th>
+                                <th className="text-left px-6 py-4 text-synergy-light-gray font-semibold">
+                                    <button
+                                        type="button"
+                                        onClick={() => requestSort("status")}
+                                        className="flex items-center gap-2 hover:text-white transition-all"
+                                    >
+                                        Status
+                                        {getSortIcon("status")}
+                                    </button>
+                                </th>
+                                <th className="text-left px-6 py-4 text-synergy-light-gray font-semibold">
+                                    Actions
                                 </th>
                             </tr>
                         </thead>
@@ -187,26 +389,26 @@ export default function TasksPage() {
                             {isLoading ? (
                                 <tr>
                                     <td
-                                        colSpan={5}
+                                        colSpan={7}
                                         className="px-6 py-8 text-center text-synergy-light-gray"
                                     >
                                         Loading tasks...
                                     </td>
                                 </tr>
-                            ) : displayTasks.length === 0 ? (
+                            ) : sortedTasks.length === 0 ? (
                                 <tr>
                                     <td
-                                        colSpan={5}
+                                        colSpan={7}
                                         className="px-6 py-8 text-center text-synergy-light-gray"
                                     >
                                         No tasks yet. Create your first task to get started!
                                     </td>
                                 </tr>
                             ) : (
-                                displayTasks.map((task, index) => (
+                                sortedTasks.map((task, index) => (
                                     <tr
                                         key={task.id}
-                                        className={`border-b border-synergy-dark-gray hover:bg-synergy-dark-gray/40 hover:border-primary/20 transition-all ${index === displayTasks.length - 1 ? "border-b-0" : ""
+                                        className={`border-b border-synergy-dark-gray hover:bg-synergy-dark-gray/40 hover:border-primary/20 transition-all ${index === sortedTasks.length - 1 ? "border-b-0" : ""
                                             }`}
                                     >
                                         <td className="px-6 py-4">
@@ -229,12 +431,21 @@ export default function TasksPage() {
 
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-2 text-synergy-light-gray">
+                                                <Users size={16} />
+                                                {task.team}
+                                            </div>
+                                        </td>
+
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-2 text-synergy-light-gray">
                                                 <Calendar size={16} />
-                                                {new Date(task.deadline).toLocaleDateString("en-US", {
-                                                    month: "short",
-                                                    day: "numeric",
-                                                    year: "numeric",
-                                                })}
+                                                {task.deadline
+                                                    ? new Date(task.deadline).toLocaleDateString("en-US", {
+                                                        month: "short",
+                                                        day: "numeric",
+                                                        year: "numeric",
+                                                    })
+                                                    : "-"}
                                             </div>
                                         </td>
 
@@ -256,6 +467,30 @@ export default function TasksPage() {
                                                 {task.status.replace("-", " ")}
                                             </span>
                                         </td>
+
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleEditTask(task)}
+                                                    className="p-2 rounded-lg bg-synergy-dark-gray hover:bg-synergy-gray text-white transition-all"
+                                                    title="Edit task"
+                                                >
+                                                    <Pencil size={16} />
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        handleDeleteTask(task.id, task.title)
+                                                    }
+                                                    className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-all"
+                                                    title="Delete task"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        </td>
                                     </tr>
                                 ))
                             )}
@@ -268,7 +503,7 @@ export default function TasksPage() {
                 <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-6 z-50">
                     <div className="bg-synergy-charcoal border border-primary/20 rounded-2xl p-8 max-w-lg w-full shadow-2xl shadow-black/50">
                         <h2 className="text-2xl text-white mb-6 font-bold">
-                            Create New Task
+                            {isEditing ? "Edit Task" : "Create New Task"}
                         </h2>
 
                         <form onSubmit={handleSubmit} className="space-y-5">
@@ -349,24 +584,82 @@ export default function TasksPage() {
 
                             <div>
                                 <label className="block text-white mb-2 text-sm">
-                                    Assign To
+                                    Status
                                 </label>
-                                <input
-                                    type="text"
-                                    value={formData.assignee}
+                                <select
+                                    value={formData.status}
                                     onChange={(e) =>
-                                        setFormData({ ...formData, assignee: e.target.value })
+                                        setFormData({
+                                            ...formData,
+                                            status: e.target.value,
+                                        })
                                     }
                                     className="w-full bg-synergy-dark-gray border border-synergy-gray rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/40 transition-all"
-                                    placeholder="Team member name"
+                                >
+                                    <option value="pending">Pending</option>
+                                    <option value="in-progress">In Progress</option>
+                                    <option value="completed">Completed</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-white mb-2 text-sm">
+                                    Team
+                                </label>
+                                <select
+                                    value={formData.teamId}
+                                    onChange={(e) =>
+                                        setFormData({
+                                            ...formData,
+                                            teamId: e.target.value,
+                                            assigneeId: "",
+                                        })
+                                    }
+                                    className="w-full bg-synergy-dark-gray border border-synergy-gray rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/40 transition-all"
                                     required
-                                />
+                                >
+                                    <option value="">Choose a team...</option>
+                                    {teams.map((team) => (
+                                        <option key={team.id} value={team.id}>
+                                            {team.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-white mb-2 text-sm">
+                                    Assign To
+                                </label>
+                                <select
+                                    value={formData.assigneeId}
+                                    onChange={(e) =>
+                                        setFormData({
+                                            ...formData,
+                                            assigneeId: e.target.value,
+                                        })
+                                    }
+                                    className="w-full bg-synergy-dark-gray border border-synergy-gray rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/40 transition-all"
+                                    required
+                                    disabled={!formData.teamId}
+                                >
+                                    <option value="">
+                                        {formData.teamId
+                                            ? "Choose a user..."
+                                            : "Select a team first"}
+                                    </option>
+                                    {filteredAssignableUsers.map((user) => (
+                                        <option key={user.id} value={user.id}>
+                                            {user.name}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
 
                             <div className="flex gap-3 pt-4">
                                 <button
                                     type="button"
-                                    onClick={() => setShowModal(false)}
+                                    onClick={resetForm}
                                     className="flex-1 bg-synergy-dark-gray hover:bg-synergy-gray text-white py-3 rounded-lg transition-all"
                                 >
                                     Cancel
@@ -376,7 +669,7 @@ export default function TasksPage() {
                                     type="submit"
                                     className="flex-1 bg-primary hover:bg-primary/90 text-white py-3 rounded-lg shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all font-semibold"
                                 >
-                                    Create Task
+                                    {isEditing ? "Save Changes" : "Create Task"}
                                 </button>
                             </div>
                         </form>
