@@ -66,6 +66,7 @@ namespace Synergy.Controllers
             existingTask.Priority = updatedTask.Priority;
             existingTask.DueDate = updatedTask.DueDate;
             existingTask.AssignedToUserId = updatedTask.AssignedToUserId;
+            existingTask.AssigneeName = updatedTask.AssigneeName;
             existingTask.TeamId = updatedTask.TeamId;
 
             await _context.SaveChangesAsync();
