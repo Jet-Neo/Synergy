@@ -69,7 +69,7 @@ export default function App() {
             setActiveTab("dashboard");
         } catch (err) {
             console.error("Auth error:", err);
-            setError("Authentication failed. Try again.");
+            setError(err.message || "Authentication failed. Try again.");
         }
     };
 

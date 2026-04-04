@@ -1,6 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System;
-
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace Synergy.Models
 {
@@ -9,7 +8,10 @@ namespace Synergy.Models
         public int Id { get; set; }
 
         public int TaskId { get; set; }
-        public int UserId { get; set; }
+        public int? UserId { get; set; }
+
+        [MaxLength(100)]
+        public string? UserName { get; set; }
 
         [Range(0, 24)]
         public decimal HoursWorked { get; set; }
