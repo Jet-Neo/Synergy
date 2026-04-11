@@ -8,14 +8,23 @@ import WorkLogsPage from "./pages/WorkLogsPage";
 import { auth } from "./services/api";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import { SettingsPage } from "./pages/SettingsPage";
-import  TeamsPage  from "./pages/TeamsPage";
+import TeamsPage from "./pages/TeamsPage";
+
+
 
 export default function App() {
     const [view, setView] = useState("loading");
     const [activeTab, setActiveTab] = useState("dashboard");
     const [error, setError] = useState(null);
+    const [currentUser, setCurrentUser] = useState(() => {
+        const savedUser = localStorage.getItem("currentUser");
+        return savedUser ? JSON.parse(savedUser) : null;
+    });
 
     useEffect(() => {
+
+        
+
         let isMounted = true;
 
         const runSessionCheck = async () => {
@@ -50,10 +59,8 @@ export default function App() {
         setError(null);
     };
 
-    const handleLogin = () => {
-        setView("login");
-        setError(null);
-    };
+
+    
 
     const handleAuth = async (email, password, name) => {
         try {
@@ -61,9 +68,13 @@ export default function App() {
 
             if (view === "signup") {
                 await auth.signup(email, password, name);
-            } else {
-                await auth.login(email, password);
+                setView("login");
+                return;
             }
+
+            const data = await auth.login(email, password);
+            setCurrentUser(data.user);
+            localStorage.setItem("currentUser", JSON.stringify(data.user));
 
             setView("dashboard");
             setActiveTab("dashboard");
@@ -82,6 +93,10 @@ export default function App() {
     };
 
     const handleLogout = async () => {
+
+        localStorage.removeItem('currentUser');
+        setCurrentUser(null);
+
         try {
             await auth.logout();
         } catch (err) {
@@ -105,7 +120,7 @@ export default function App() {
             case "teams":
                 return <TeamsPage />;
             case "settings":
-                return <SettingsPage />;
+                return <SettingsPage user={currentUser} />;
             default:
                 return <DashboardPage />;
         }
@@ -123,7 +138,10 @@ export default function App() {
         return (
             <LandingPage
                 onGetStarted={handleGetStarted}
-                onLogin={handleLogin}
+                onLogin={() => {
+                    setView("login");
+                    setError(null);
+                }}
             />
         );
     }

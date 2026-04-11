@@ -74,8 +74,10 @@ namespace Synergy.Controllers
         public async Task<IActionResult> Login([FromBody] LoginDto dto)
         {
             // Find user by email
+            var normalizedEmail = dto.Email?.Trim().ToLower();
+
             var user = await _db.Users
-                .FirstOrDefaultAsync(u => u.Email == dto.Email);
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail);
 
             if (user == null)
                 return Unauthorized(new { message = "Invalid email or password." });
