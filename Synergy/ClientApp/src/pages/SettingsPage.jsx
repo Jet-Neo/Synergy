@@ -134,8 +134,14 @@ function AppearanceSettings() {
     );
 }
 
-export function SettingsPage() {
+export function SettingsPage({ user }) {
     const [activeTab, setActiveTab] = useState('Profile');
+    const [profile, setProfile] = useState(() => ({
+        name: user?.name || user?.Name || '',
+        email: user?.email || user?.Email || '',
+        role: user?.role || user?.Role || '',
+        bio: user?.bio || user?.Bio || '',
+    }));
 
     return (
         <div className="p-8 space-y-8">
@@ -195,28 +201,23 @@ export function SettingsPage() {
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-white mb-2 text-sm">First Name</label>
+                                        <label className="block text-white mb-2 text-sm">Name</label>
                                         <input
                                             type="text"
-                                            defaultValue="First Name"
+                                            value={profile.name}
+                                            onChange={(e) => setProfile({ ...profile, name: e.target.value })}
                                             className="w-full bg-synergy-dark-gray border border-synergy-gray rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-all"
                                         />
                                     </div>
-                                    <div>
-                                        <label className="block text-white mb-2 text-sm">Last Name</label>
-                                        <input
-                                            type="text"
-                                            defaultValue="Last Name"
-                                            className="w-full bg-synergy-dark-gray border border-synergy-gray rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-all"
-                                        />
-                                    </div>
+                                    
                                 </div>
 
                                 <div>
                                     <label className="block text-white mb-2 text-sm">Email</label>
                                     <input
                                         type="email"
-                                        defaultValue="example@example.com"
+                                        value={profile.email}
+                                        onChange={(e) => setProfile({ ...profile, email: e.target.value })}
                                         className="w-full bg-synergy-dark-gray border border-synergy-gray rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-all"
                                     />
                                 </div>
@@ -225,7 +226,8 @@ export function SettingsPage() {
                                     <label className="block text-white mb-2 text-sm">Role</label>
                                     <input
                                         type="text"
-                                        defaultValue="Role"
+                                        value={profile.role}
+                                        onChange={(e) => setProfile({ ...profile, role: e.target.value })}
                                         className="w-full bg-synergy-dark-gray border border-synergy-gray rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-all"
                                     />
                                 </div>
