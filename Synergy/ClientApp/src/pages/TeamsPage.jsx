@@ -899,7 +899,7 @@ export default function TeamsPage() {
                                                             {member.email}
                                                         </span>
                                                     </div>
-                                                    <div>•</div>
+                                                    <div>|</div>
                                                     <div>{member.role}</div>
                                                 </div>
                                             </div>
