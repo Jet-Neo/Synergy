@@ -447,15 +447,28 @@ export default function AnalyticsPage() {
                         <div className="text-synergy-light-gray">
                             High Risk Members
                         </div>
-                        <AlertTriangle className="text-red-500" />
+                        <AlertTriangle
+                            className={
+                                highRiskMembers > 0
+                                    ? "text-red-500"
+                                    : "text-synergy-light-gray"
+                            }
+                        />
                     </div>
 
                     <div className="text-3xl text-white font-bold">
                         {highRiskMembers}
                     </div>
 
-                    <div className="text-sm text-red-500">
-                        Requires attention
+                    <div
+                        className={`text-sm ${highRiskMembers > 0
+                                ? "text-red-500"
+                                : "text-synergy-light-gray"
+                            }`}
+                    >
+                        {highRiskMembers > 0
+                            ? "Requires attention"
+                            : "No high-risk members"}
                     </div>
                 </div>
             </div>

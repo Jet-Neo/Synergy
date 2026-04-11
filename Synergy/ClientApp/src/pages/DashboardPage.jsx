@@ -181,6 +181,9 @@ export default function DashboardPage() {
                 color: "text-red-500",
                 bg: "bg-red-500/10",
                 border: "border-[#3a2323]",
+                iconBg: "bg-red-500/10",
+                iconColor: "text-red-500",
+                message: "Requires immediate attention",
             };
         }
 
@@ -190,6 +193,9 @@ export default function DashboardPage() {
                 color: "text-yellow-400",
                 bg: "bg-yellow-400/10",
                 border: "border-[#3f3a24]",
+                iconBg: "bg-yellow-400/10",
+                iconColor: "text-yellow-400",
+                message: "Monitor workload",
             };
         }
 
@@ -198,6 +204,9 @@ export default function DashboardPage() {
             color: "text-primary",
             bg: "bg-primary/10",
             border: "border-[#18453b]",
+            iconBg: "bg-primary/10",
+            iconColor: "text-primary",
+            message: "Workload is within normal range",
         };
     };
 
@@ -251,8 +260,8 @@ export default function DashboardPage() {
                 >
                     <div className="flex items-start justify-between mb-4">
                         <div className="text-synergy-light-gray">Burnout Risk</div>
-                        <div className="p-2 bg-red-500/10 rounded-lg">
-                            <AlertTriangle size={20} style={{ color: "#ef4444" }} />
+                        <div className={`p-2 rounded-lg ${burnoutRisk.iconBg}`}>
+                            <AlertTriangle size={20} className={burnoutRisk.iconColor} />
                         </div>
                     </div>
 
@@ -265,6 +274,10 @@ export default function DashboardPage() {
                             className={`inline-block px-3 py-1.5 rounded-lg ${burnoutRisk.bg} ${burnoutRisk.color} text-sm font-semibold`}
                         >
                             {totalWeeklyHours} hrs/week
+                        </div>
+
+                        <div className={`text-sm ${burnoutRisk.color}`}>
+                            {burnoutRisk.message}
                         </div>
                     </div>
                 </div>
