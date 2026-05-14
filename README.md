@@ -299,12 +299,6 @@ This project is for educational and academic purposes.
 
 ---
 
-## Screenshots
-
-> Add screenshots of the dashboard, analytics page, teams page, and task management interface here.
-
----
-
 ## Contact
 
 For questions or collaboration:
